@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext'
 import { CategoryProvider } from './context/CategoryContext'
 import { FilterProvider } from './context/FilterContext'
 import { Toaster } from 'react-hot-toast'
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -58,5 +60,6 @@ export default function RootLayout({ children }) {
         </CategoryProvider>
       </body>
     </html>
+    </Suspense>
   );
 }
