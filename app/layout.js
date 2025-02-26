@@ -27,9 +27,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CategoryProvider>
-          <FilterProvider>
-            <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <CategoryProvider>
+            <FilterProvider>
               <CartProvider>
                 {children}
                 <Toaster
@@ -56,9 +56,9 @@ export default function RootLayout({ children }) {
                   }}
                 />
               </CartProvider>
-            </Suspense>
-          </FilterProvider>
-        </CategoryProvider>
+            </FilterProvider>
+          </CategoryProvider>
+        </Suspense>
       </body>
     </html>
   );
