@@ -1,9 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { CartProvider } from './context/CartContext'
-import { CategoryProvider } from './context/CategoryContext'
-import { FilterProvider } from './context/FilterContext'
-import { Toaster } from 'react-hot-toast'
+import { CartProvider } from "./context/CartContext";
+import { CategoryProvider } from "./context/CategoryContext";
+import { FilterProvider } from "./context/FilterContext";
+import { Toaster } from "react-hot-toast";
 import { Suspense } from "react";
 
 const geistSans = Geist({
@@ -23,43 +23,43 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CategoryProvider>
           <FilterProvider>
-            <CartProvider>
-              {children}
-              <Toaster 
-                position="top-center"
-                reverseOrder={false}
-                toastOptions={{
-                  duration: 3000,
-                  style: {
-                    background: '#333',
-                    color: '#fff',
-                    padding: '16px',
-                    borderRadius: '8px',
-                  },
-                  success: {
+            <Suspense fallback={<div>Loading...</div>}>
+              <CartProvider>
+                {children}
+                <Toaster
+                  position="top-center"
+                  reverseOrder={false}
+                  toastOptions={{
+                    duration: 3000,
                     style: {
-                      background: '#059669',
+                      background: "#333",
+                      color: "#fff",
+                      padding: "16px",
+                      borderRadius: "8px",
                     },
-                  },
-                  error: {
-                    style: {
-                      background: '#dc2626',
+                    success: {
+                      style: {
+                        background: "#059669",
+                      },
                     },
-                  },
-                }}
-              />
-            </CartProvider>
+                    error: {
+                      style: {
+                        background: "#dc2626",
+                      },
+                    },
+                  }}
+                />
+              </CartProvider>
+            </Suspense>
           </FilterProvider>
         </CategoryProvider>
       </body>
     </html>
-    </Suspense>
   );
 }
