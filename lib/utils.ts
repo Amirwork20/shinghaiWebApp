@@ -1,6 +1,12 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+// Custom class name utility without dependencies
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+/**
+ * Combines multiple class names, filtering out falsy values
+ */
+export function cn(...classes: (string | boolean | undefined | null)[]): string {
+  return classes
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+    .replace(/\s+/g, ' '); // Remove duplicate spaces
 } 

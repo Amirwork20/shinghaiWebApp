@@ -10,13 +10,11 @@ import { Checkbox } from '../components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { useCart } from '../context/CartContext'
 import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({})
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -32,50 +30,17 @@ export default function CheckoutPage() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
-  const validateForm = () => {
-    const newErrors = {}
-    
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email'
-    }
-
-    // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required'
-    } else if (!/^(\+92|0)?[0-9]{10}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Please enter a valid Pakistani phone number'
-    }
-
-    // Required fields
-    if (!formData.firstName) newErrors.firstName = 'First name is required'
-    if (!formData.address) newErrors.address = 'Address is required'
-    if (!formData.deliveryCity) newErrors.deliveryCity = 'Please select a delivery city'
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
-    }
   }
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error('Please check all required fields and try again.')
+    if (!formData.email || !formData.firstName || !formData.address || !formData.phone || !formData.deliveryCity) {
+      alert('Please fill in all required fields')
       return
     }
 
@@ -101,11 +66,11 @@ export default function CheckoutPage() {
       })),
       order_notes: formData.orderNotes,
       subtotal: subtotal,
-      payment_method: 'COD'
+      payment_method: 'COD'  // Cash on Delivery
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/web/create-order`, {
+      const response = await fetch('http://localhost:5000/api/v1/web/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,18 +81,26 @@ export default function CheckoutPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Clear cart and redirect to success page
         clearCart()
-        toast.success('Order placed successfully!')
         router.push('/order-success')
       } else {
-        toast.error(data.message || 'Failed to place order')
+        alert('Failed to place order: ' + data.message)
       }
     } catch (error) {
       console.error('Error placing order:', error)
-      toast.error('Failed to place order. Please try again.')
+      alert('Failed to place order. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Function to handle login navigation
+  const handleLoginClick = () => {
+    // Store the current page (checkout) in localStorage
+    localStorage.setItem('previousLocation', '/payment')
+    // Navigate to the account page
+    router.push('/account')
   }
 
   // If cart is empty, redirect or show message
@@ -162,21 +135,21 @@ export default function CheckoutPage() {
             <section className="space-y-4 bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-medium">Contact</h2>
-                <button className="text-blue-600 text-sm">Log in</button>
+                <button 
+                  className="text-blue-600 text-sm hover:underline"
+                  onClick={handleLoginClick}
+                >
+                  Log in
+                </button>
               </div>
-              <div className="space-y-1">
-                <Input 
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Email or mobile phone number"
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm">{errors.email}</p>
-                )}
-              </div>
+              <Input 
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Email or mobile phone number"
+                required
+              />
               <div className="flex items-center gap-2">
                 <Checkbox id="newsletter" />
                 <Label htmlFor="newsletter">Email me with news and offers</Label>
