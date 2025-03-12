@@ -1,6 +1,6 @@
 'use client'
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Mousewheel } from 'swiper/modules';
+import { Pagination, Mousewheel, EffectCreative } from 'swiper/modules';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -8,6 +8,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-creative';
 import Navbar from './components/mainpage/Navbar';
 import Footer from './components/mainpage/Footer';
 
@@ -42,33 +43,78 @@ export default function Home() {
   return (
     <>
       <Navbar/>
-      <Swiper
-        direction={'vertical'}
-        pagination={{
-          clickable: true,
-          bulletClass: 'swiper-pagination-bullet',
-        }}
-        mousewheel={true}
-        speed={1000}
-        modules={[Pagination, Mousewheel]}
-        className="mySwiper"
-      >
-        {images.map((image, index) => (
-          <SwiperSlide 
-            key={index}
-            onClick={() => router.push('/collections')}
-            style={{
-              backgroundImage: `url("${image}")`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              cursor: 'pointer'
-            }}
-          ></SwiperSlide>
-        ))}
-        <SwiperSlide>
-          <Footer/>
-        </SwiperSlide>
-      </Swiper>
+      
+      {/* Mobile Swiper with EffectCreative */}
+      <div className="mobile-swiper">
+        <Swiper
+          direction={'vertical'}
+          pagination={{
+            clickable: true,
+            bulletClass: 'swiper-pagination-bullet',
+          }}
+          mousewheel={true}
+          speed={1000}
+          modules={[Pagination, Mousewheel, EffectCreative]}
+          effect={'creative'}
+          creativeEffect={{
+            prev: {
+              shadow: true,
+              translate: [0, 0, -400],
+            },
+            next: {
+              translate: [0, '100%', 0],
+            },
+          }}
+          className="mySwiper"
+        >
+          {images.map((image, index) => (
+            <SwiperSlide 
+              key={index}
+              onClick={() => router.push('/collections')}
+              style={{
+                backgroundImage: `url("${image}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                cursor: 'pointer'
+              }}
+            ></SwiperSlide>
+          ))}
+          <SwiperSlide>
+            <Footer/>
+          </SwiperSlide>
+        </Swiper>
+      </div>
+      
+      {/* Desktop Swiper without EffectCreative */}
+      <div className="desktop-swiper">
+        <Swiper
+          direction={'vertical'}
+          pagination={{
+            clickable: true,
+            bulletClass: 'swiper-pagination-bullet',
+          }}
+          mousewheel={true}
+          speed={1000}
+          modules={[Pagination, Mousewheel]}
+          className="mySwiper"
+        >
+          {images.map((image, index) => (
+            <SwiperSlide 
+              key={index}
+              onClick={() => router.push('/collections')}
+              style={{
+                backgroundImage: `url("${image}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                cursor: 'pointer'
+              }}
+            ></SwiperSlide>
+          ))}
+          <SwiperSlide>
+            <Footer/>
+          </SwiperSlide>
+        </Swiper>
+      </div>
 
       {/* WhatsApp Floating Button */}
       <button
@@ -89,6 +135,25 @@ export default function Home() {
           background-color: black !important;
           width: 12px !important;
           height: 12px !important;
+        }
+        
+        /* Media queries for responsive Swiper components */
+        .mobile-swiper {
+          display: block;
+        }
+        
+        .desktop-swiper {
+          display: none;
+        }
+        
+        @media (min-width: 768px) {
+          .mobile-swiper {
+            display: none;
+          }
+          
+          .desktop-swiper {
+            display: block;
+          }
         }
       `}</style>
     </>

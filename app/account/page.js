@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '../components/ui/input'
 import { Button } from '../components/ui/button'
@@ -10,6 +10,8 @@ import { Footer } from '../components/layout/Footer'
 
 export default function AccountPage() {
   const router = useRouter()
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [activeTab, setActiveTab] = useState('login')
   const [loginData, setLoginData] = useState({ email: '', password: '' })
   const [signupData, setSignupData] = useState({ 
@@ -20,6 +22,14 @@ export default function AccountPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Check if user is already logged in on component mount
+  useEffect(() => {
+    const loginStatus = localStorage.getItem('isLoggedIn')
+    if (loginStatus === 'true') {
+      setIsLoggedIn(true)
+    }
+  }, [])
 
   // Handle login form input changes
   const handleLoginChange = (e) => {
@@ -33,6 +43,12 @@ export default function AccountPage() {
     setSignupData(prev => ({ ...prev, [name]: value }))
   }
 
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn')
+    setIsLoggedIn(false)
+  }
+
   // Handle login submission
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -40,30 +56,9 @@ export default function AccountPage() {
     setLoading(true)
 
     try {
-      // Make API call to login endpoint
-      // const response = await fetch('/api/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(loginData)
-      // })
-      
-      // Simulate successful login for now
-      // if (response.ok) {
-      //   const data = await response.json()
-      //   localStorage.setItem('auth_token', data.token)
-      // }
-      
       // For demonstration, we'll simulate success
       localStorage.setItem('isLoggedIn', 'true')
-      
-      // Redirect to previous page if available, otherwise to homepage
-      const previousLocation = localStorage.getItem('previousLocation')
-      if (previousLocation) {
-        localStorage.removeItem('previousLocation')
-        router.push(previousLocation)
-      } else {
-        router.push('/')
-      }
+      setIsLoggedIn(true)
     } catch (error) {
       console.error('Login error:', error)
       setError('Failed to login. Please try again.')
@@ -86,30 +81,9 @@ export default function AccountPage() {
     setLoading(true)
 
     try {
-      // Make API call to signup endpoint
-      // const response = await fetch('/api/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(signupData)
-      // })
-      
-      // Simulate successful signup for now
-      // if (response.ok) {
-      //   const data = await response.json()
-      //   localStorage.setItem('auth_token', data.token)
-      // }
-      
       // For demonstration, we'll simulate success
       localStorage.setItem('isLoggedIn', 'true')
-      
-      // Redirect to previous page if available, otherwise to homepage
-      const previousLocation = localStorage.getItem('previousLocation')
-      if (previousLocation) {
-        localStorage.removeItem('previousLocation')
-        router.push(previousLocation)
-      } else {
-        router.push('/')
-      }
+      setIsLoggedIn(true)
     } catch (error) {
       console.error('Signup error:', error)
       setError('Failed to create account. Please try again.')
@@ -124,108 +98,123 @@ export default function AccountPage() {
       <main className="max-w-md mx-auto px-4 py-12">
         <h1 className="text-2xl font-bold text-center mb-8">My Account</h1>
         
-        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Create Account</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login" className="space-y-4">
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={loginData.email}
-                  onChange={handleLoginChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
-            </form>
+        {isLoggedIn ? (
+          <div className="space-y-6 text-center">
+            <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+              <h2 className="text-xl font-medium text-green-800 mb-2">Already Logged In</h2>
+              <p className="text-green-700">You are currently logged in to your account.</p>
+            </div>
+            <Button 
+              onClick={handleLogout} 
+              className="w-full bg-red-500 hover:bg-red-600"
+            >
+              Log Out
+            </Button>
+          </div>
+        ) : (
+          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="signup">Create Account</TabsTrigger>
+            </TabsList>
             
-            <p className="text-sm text-center">
-              <a href="#" className="text-blue-600 hover:underline">
-                Forgot your password?
-              </a>
-            </p>
-          </TabsContent>
-          
-          <TabsContent value="signup" className="space-y-4">
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={signupData.name}
-                  onChange={handleSignupChange}
-                />
-              </div>
+            <TabsContent value="login" className="space-y-4">
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={loginData.email}
+                    onChange={handleLoginChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium">Password</label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={loginData.password}
+                    onChange={handleLoginChange}
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Logging in...' : 'Login'}
+                </Button>
+              </form>
               
-              <div className="space-y-2">
-                <label htmlFor="signup-email" className="text-sm font-medium">Email</label>
-                <Input
-                  id="signup-email"
-                  name="email"
-                  type="email"
-                  required
-                  value={signupData.email}
-                  onChange={handleSignupChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="signup-password" className="text-sm font-medium">Password</label>
-                <Input
-                  id="signup-password"
-                  name="password"
-                  type="password"
-                  required
-                  value={signupData.password}
-                  onChange={handleSignupChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="confirm-password" className="text-sm font-medium">Confirm Password</label>
-                <Input
-                  id="confirm-password"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={signupData.confirmPassword}
-                  onChange={handleSignupChange}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+              <p className="text-sm text-center">
+                <a href="#" className="text-blue-600 hover:underline">
+                  Forgot your password?
+                </a>
+              </p>
+            </TabsContent>
+            
+            <TabsContent value="signup" className="space-y-4">
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">Full Name</label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={signupData.name}
+                    onChange={handleSignupChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="signup-email" className="text-sm font-medium">Email</label>
+                  <Input
+                    id="signup-email"
+                    name="email"
+                    type="email"
+                    required
+                    value={signupData.email}
+                    onChange={handleSignupChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="signup-password" className="text-sm font-medium">Password</label>
+                  <Input
+                    id="signup-password"
+                    name="password"
+                    type="password"
+                    required
+                    value={signupData.password}
+                    onChange={handleSignupChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="confirm-password" className="text-sm font-medium">Confirm Password</label>
+                  <Input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={signupData.confirmPassword}
+                    onChange={handleSignupChange}
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        )}
       </main>
       <Footer />
     </>

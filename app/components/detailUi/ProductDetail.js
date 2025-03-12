@@ -433,25 +433,28 @@ export default function ProductDetail( ) {
         </div>
 
         <div className="flex gap-4">
-          <Button 
-            variant="outline" 
-            className="flex-1 border-black text-black hover:bg-gray-100"
-            onClick={() => setShowCartModal(false)}
-          >
-            CONTINUE SHOPPING
-          </Button>
+          <Link href="/collections">
+            <Button 
+              variant="outline" 
+              className="flex-1 border-black text-black hover:bg-gray-100"
+            >
+              CONTINUE SHOPPING
+            </Button>
+          </Link>
           <Link href="/add-to-cart">
             <Button className="flex-1 bg-transparent text-black hover:bg-gray-100 border border-black">
               VIEW CART ({cartItems.length})
             </Button>
           </Link>
         </div>
-
+  <Link href="/payment">
         <Button 
           className="w-full mt-4 bg-transparent text-black hover:bg-gray-100 border border-black"
         >
           CHECKOUT
         </Button>
+         </Link>
+        
       </DialogContent>  
     </Dialog>
     </>

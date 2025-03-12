@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Info } from 'lucide-react'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -10,11 +10,14 @@ import { Checkbox } from '../components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { useCart } from '../context/CartContext'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
+  const [savedInfoExists, setSavedInfoExists] = useState(false)
+  const [previousOrders, setPreviousOrders] = useState([])
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -27,6 +30,56 @@ export default function CheckoutPage() {
     deliveryCity: '',
     orderNotes: ''
   })
+
+  // Load previous order data from localStorage on component mount
+  useEffect(() => {
+    // Load saved shipping info
+    try {
+      const savedOrderInfo = localStorage.getItem('orderInfo')
+      console.log("Retrieved saved order info:", savedOrderInfo)
+      
+      if (savedOrderInfo) {
+        const parsedInfo = JSON.parse(savedOrderInfo)
+        console.log("Parsed saved info:", parsedInfo)
+        
+        // Ensure we have all expected fields
+        setFormData({
+          email: parsedInfo.email || '',
+          firstName: parsedInfo.firstName || '',
+          lastName: parsedInfo.lastName || '',
+          address: parsedInfo.address || '',
+          apartment: parsedInfo.apartment || '',
+          city: parsedInfo.city || '',
+          postalCode: parsedInfo.postalCode || '',
+          phone: parsedInfo.phone || '',
+          deliveryCity: parsedInfo.deliveryCity || '',
+          orderNotes: parsedInfo.orderNotes || ''
+        })
+        
+        setSavedInfoExists(true)
+      }
+
+      // Load previous orders if they exist
+      const orderHistory = localStorage.getItem('orderHistory')
+      if (orderHistory) {
+        setPreviousOrders(JSON.parse(orderHistory))
+      }
+    } catch (error) {
+      console.error("Error loading saved information:", error)
+    }
+  }, [])
+
+  // Force update of select fields after formData is loaded
+  useEffect(() => {
+    // This ensures the UI elements reflect the formData state
+    if (savedInfoExists && formData.deliveryCity) {
+      const selectElement = document.querySelector('[name="deliveryCity"]')
+      if (selectElement) {
+        // Force UI update for the select component
+        selectElement.value = formData.deliveryCity
+      }
+    }
+  }, [savedInfoExists, formData.deliveryCity])
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
@@ -70,6 +123,17 @@ export default function CheckoutPage() {
     }
 
     try {
+      // Always save order information for returning customers
+      const formDataWithTimestamp = {
+        ...formData,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('orderInfo', JSON.stringify(formDataWithTimestamp))
+      console.log("Saved order info to localStorage:", formDataWithTimestamp)
+
+      // Also store current location for return visits
+      localStorage.setItem('previousLocation', '/payment')
+
       const response = await fetch('http://localhost:5000/api/v1/web/create-order', {
         method: 'POST',
         headers: {
@@ -81,6 +145,27 @@ export default function CheckoutPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Save order to order history
+        const newOrder = {
+          id: Date.now(), // Simple ID for the order
+          items: cartItems,
+          total: subtotal,
+          date: new Date().toISOString(),
+          shippingInfo: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            address: formData.address,
+            city: formData.city
+          }
+        }
+        
+        // Get existing order history or create empty array
+        const existingOrders = JSON.parse(localStorage.getItem('orderHistory') || '[]')
+        existingOrders.push(newOrder)
+        
+        // Limit to last 5 orders
+        const limitedOrders = existingOrders.slice(-5)
+        localStorage.setItem('orderHistory', JSON.stringify(limitedOrders))
+        
         // Clear cart and redirect to success page
         clearCart()
         router.push('/order-success')
@@ -103,15 +188,35 @@ export default function CheckoutPage() {
     router.push('/account')
   }
 
+  // Function to clear saved information
+  const clearSavedInfo = () => {
+    localStorage.removeItem('orderInfo')
+    setFormData({
+      email: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      apartment: '',
+      city: '',
+      postalCode: '',
+      phone: '',
+      deliveryCity: '',
+      orderNotes: ''
+    })
+    setSavedInfoExists(false)
+  }
+
   // If cart is empty, redirect or show message
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-medium mb-4">Your cart is empty</h2>
-          <Button onClick={() => window.location.href = '/collections'}>
-            Continue Shopping
-          </Button>
+          <Link href="/collections">
+            <Button>
+              Continue Shopping
+            </Button>
+          </Link>
         </div>
       </div>
     )
@@ -130,6 +235,42 @@ export default function CheckoutPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+        {savedInfoExists && (
+          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-medium text-blue-800">Using saved information</h3>
+                <p className="text-sm text-blue-700">Your previous order information has been loaded.</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => {
+                  const savedOrderInfo = localStorage.getItem('orderInfo');
+                  if (savedOrderInfo) {
+                    const parsedInfo = JSON.parse(savedOrderInfo);
+                    setFormData({
+                      email: parsedInfo.email || '',
+                      firstName: parsedInfo.firstName || '',
+                      lastName: parsedInfo.lastName || '',
+                      address: parsedInfo.address || '',
+                      apartment: parsedInfo.apartment || '',
+                      city: parsedInfo.city || '',
+                      postalCode: parsedInfo.postalCode || '',
+                      phone: parsedInfo.phone || '',
+                      deliveryCity: parsedInfo.deliveryCity || '',
+                      orderNotes: parsedInfo.orderNotes || ''
+                    });
+                  }
+                }}>
+                  Reload Data
+                </Button>
+                <Button variant="outline" size="sm" onClick={clearSavedInfo}>
+                  Clear Saved Info
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-[1fr_400px] gap-6 sm:gap-12">
           <div className="space-y-6 sm:space-y-8">
             <section className="space-y-4 bg-white p-4 sm:p-6 rounded-lg shadow-sm">
@@ -160,7 +301,8 @@ export default function CheckoutPage() {
               <h2 className="text-lg font-medium">Delivery</h2>
               <Select 
                 name="deliveryCity"
-                value={formData.deliveryCity}
+                value={formData.deliveryCity || ""}
+                defaultValue={formData.deliveryCity || ""}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, deliveryCity: value }))}
               >
                 <SelectTrigger>
@@ -239,11 +381,18 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Checkbox id="save-info" />
+                <Checkbox id="save-info" defaultChecked={savedInfoExists} />
                 <Label htmlFor="save-info">Save this information for next time</Label>
               </div>
+              
+              {savedInfoExists && (
+                <div className="text-xs text-gray-500 mt-2">
+                  <p>Information loaded from your previous order on {new Date(JSON.parse(localStorage.getItem('orderInfo')).timestamp || Date.now()).toLocaleDateString()}</p>
+                </div>
+              )}
             </section>
 
+           
             <section className="space-y-4 bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h2 className="text-lg font-medium">Shipping method</h2>
               <div className="bg-gray-50 p-4 rounded">

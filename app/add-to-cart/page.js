@@ -90,9 +90,11 @@ export default function CartPage() {
               Taxes and shipping calculated at checkout
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
-                Continue Shopping
-              </Button>
+              <Link href="/collections">
+                <Button variant="outline" className="w-full">
+                  Continue Shopping
+                </Button>
+              </Link>
               <Link href="/payment">
               <Button className="w-full bg-black text-white hover:bg-black/90">
                 Checkout
