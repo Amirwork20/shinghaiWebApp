@@ -27,63 +27,91 @@ export function Header() {
   }
 
   return (
-    <header className="border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between py-2 gap-4">
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
-            <Link href="https://wa.me/923362164396" className="text-green-600 hover:scale-110 transition-transform">
-              <FaWhatsapp className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Link>
-            {/* <Link href="tel:yourphone" className="text-gray-600 hover:scale-110 transition-transform">
-              <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Link> */}
-            <form onSubmit={handleSubmit} className="relative hidden sm:block">
+    <header>
+      {/* Top Bar with 3 sections - Black background */}
+      <div className="bg-black text-white">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-2">
+            {/* Left Section: WhatsApp, Phone & Search */}
+            <div className="flex items-center gap-3 w-1/3 justify-start">
+              <Link href="https://wa.me/923362164396" className="text-green-500 hover:text-green-400 transition-transform hover:scale-110">
+                <FaWhatsapp className="w-6 h-6" />
+              </Link>
+              {/* <div className="h-6 flex items-center">
+                <a href="tel:+923362164396" className="text-white hover:text-gray-300">
+                  <Phone className="w-5 h-5" />
+                </a>
+              </div> */}
+
+              {/* Desktop Search Input */}
+              <div className="hidden md:block relative ml-2">
+                <form onSubmit={handleSubmit} className="relative">
+                  <Input
+                    type="search"
+                    placeholder="Search..."
+                    className="pl-8 pr-4 py-1 w-[180px] lg:w-[220px] bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-gray-700"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
+                </form>
+              </div>
+            </div>
+
+            {/* Center Section: Logo */}
+            <div className="flex items-center justify-center w-1/3">
+              <Link 
+                href="/collections" 
+                className="transition-transform hover:scale-105 flex items-center justify-center"
+              >
+                <img 
+                  src="/Shinghai Brand Assets/PNG Assets-Shinghai Official-02.png"
+                  alt="Shinghai Logo"
+                  className="h-[30px] sm:h-[35px] md:h-[40px] w-auto object-contain"
+                />
+              </Link>
+            </div>
+
+            {/* Right Section: Shipping, Account & Cart */}
+            <div className="flex items-center gap-4 w-1/3 justify-end">
+              <div className="flex items-center">
+                <Link 
+                  href="/account" 
+                  className="text-white hover:text-gray-300 transition-transform hover:scale-110"
+                  onClick={storeCurrentLocation}
+                >
+                  <User className="w-5 h-5" />
+                </Link>
+              </div>
+              <div className="flex items-center">
+                <Link href="/add-to-cart" className="text-white hover:text-gray-300 transition-transform hover:scale-110">
+                  <ShoppingCart className="w-5 h-5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Search */}
+          <div className="md:hidden pb-2">
+            <form onSubmit={handleSubmit} className="relative">
               <Input
                 type="search"
                 placeholder="Search..."
-                className="pl-8 pr-4 py-1 w-[200px] lg:w-[300px] transition-all"
+                className="pl-8 pr-4 py-1.5 w-full rounded-lg bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
             </form>
           </div>
-          <Link 
-            href="/collections" 
-            className="text-2xl font-bold order-first sm:order-none transition-transform hover:scale-105 flex items-center justify-center"
-          >
-            <img 
-              src="/1d4da0a1-d803-4c60-b33f-9adb3ca2bfbc.jpg"
-              alt="Limelight Logo"
-              className="h-[50px] sm:h-[60px] md:h-[80px] w-[150px] sm:w-[180px] md:w-[240px] object-contain"
-            />
-          </Link>
-          <div className="flex items-center gap-6 w-full sm:w-auto justify-center sm:justify-end">
-            <Link 
-              href="/account" 
-              className="hover:scale-110 transition-transform"
-              onClick={storeCurrentLocation}
-            >
-              <User className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Link>
-            <Link href="/add-to-cart" className="hover:scale-110 transition-transform">
-              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Link>
-          </div>
         </div>
-        <div className="sm:hidden pb-2">
-          <form onSubmit={handleSubmit} className="relative">
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-8 pr-4 py-1.5 w-full rounded-lg"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
-          </form>
+      </div>
+
+      {/* Navigation - White background */}
+      <div className="bg-white">
+        <div className="container mx-auto px-4">
+          <NavMenu />
         </div>
-        <NavMenu />
       </div>
     </header>
   )

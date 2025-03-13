@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image" 
 import { Menu, Search, ShoppingBag } from 'lucide-react'
 import { Button } from "../ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet"
@@ -82,8 +83,14 @@ export default function Navbar() {
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="mr-auto font-serif text-xl text-black">
-          Shinghai
+        <Link href="/" className="mr-auto">
+          <img 
+            src="/Shinghai Brand Assets/PNG Assets-Shinghai Official-01.png" 
+            alt="Shinghai Logo"
+            width={120} 
+            height={40}
+            className="object-contain"
+          />
         </Link>
 
         <nav className="flex items-center gap-6">

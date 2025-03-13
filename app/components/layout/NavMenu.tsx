@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useCategory } from "../../context/CategoryContext"
 import { useFilter } from "../../context/FilterContext"
+import { usePathname } from "next/navigation"
 
 interface Category {
   _id: string
@@ -28,8 +29,11 @@ export function NavMenu() {
   const [defaultImage, setDefaultImage] = useState<string | null>(null)
   const [categories, setCategories] = useState<MainCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isHoveringDropdown, setIsHoveringDropdown] = useState(false)
   const { handleCategoryChange, handleClearCategories } = useCategory()
   const { resetFilters } = useFilter()
+  const pathname = usePathname()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -84,10 +88,47 @@ export function NavMenu() {
   }
 
   const handleMainCategoryHover = (category: MainCategory) => {
+    // Clear any existing timeout to prevent it from closing the dropdown
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    
     setActiveMenu(category?._id)
     const defaultImg = category?.sub_categories[0]?.image_url 
     setDefaultImage(defaultImg)
     setActiveImage(null)
+  }
+
+  const handleMenuItemLeave = () => {
+    // Only close the dropdown if we're not hovering over the dropdown
+    if (!isHoveringDropdown) {
+      // Add a small delay before closing to allow for movement to the dropdown
+      timeoutRef.current = setTimeout(() => {
+        setActiveMenu(null)
+        setDefaultImage(null)
+        setActiveImage(null)
+      }, 100)
+    }
+  }
+
+  const handleDropdownMouseEnter = () => {
+    // Clear any timeout that might close the dropdown
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    setIsHoveringDropdown(true)
+  }
+
+  const handleDropdownMouseLeave = () => {
+    setIsHoveringDropdown(false)
+    // Add a small delay before closing
+    timeoutRef.current = setTimeout(() => {
+      setActiveMenu(null)
+      setDefaultImage(null)
+      setActiveImage(null)
+    }, 100)
   }
 
   const handleAllClick = (e: React.MouseEvent) => {
@@ -96,30 +137,42 @@ export function NavMenu() {
     resetFilters()
   }
 
+  const isActive = (categoryName: string) => {
+    // Simple logic to determine if a menu item is active
+    // This can be expanded based on your actual routing/state needs
+    return pathname.includes(categoryName.toLowerCase())
+  }
+
   if (isLoading) {
     return (
       <nav className="relative">
         <div className="hidden lg:flex justify-center gap-8 py-4">
           {[...Array(5)].map((_, index) => (
             <div key={index} className="animate-pulse">
-              <div className="h-4 w-24 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-600 rounded"></div>
             </div>
           ))}
         </div>
         <div className="lg:hidden py-2">
-          <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-full bg-gray-600 rounded animate-pulse"></div>
         </div>
       </nav>
     )
   }
 
+  // Fixed main navigation items based on image
+  const mainNavItems = ["WOMEN", "GIRLS", "MEN", "ACCESSORIES", "SALE"]
+
+  // Find the active category
+  const activeCategory = categories.find(cat => cat._id === activeMenu);
+
   return (
-    <nav className="relative">
+    <nav className="relative bg-white">
       {/* Mobile Menu Button */}
       <div className="lg:hidden py-2">
         <button 
           onClick={() => setActiveMenu(activeMenu ? null : 'menu')}
-          className="w-full px-4 py-2.5 flex items-center justify-between text-gray-700 hover:bg-gray-50 border rounded-lg"
+          className="w-full px-4 py-2.5 flex items-center justify-between text-black hover:bg-gray-100 border border-gray-300 rounded-lg"
         >
           <div className="flex items-center gap-2">
             <svg 
@@ -155,113 +208,118 @@ export function NavMenu() {
         </button>
       </div>
 
-      {/* Desktop Menu */}
-      <div className="hidden lg:flex justify-center gap-8 py-4">
-        {/* <div className="relative">
-          <Link
-            href="/collections"
-            onClick={handleAllClick}
-            className="uppercase relative hover:text-[#101b2f] transition-colors after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-[#101b2f] after:left-0 after:bottom-0 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300"
-          >
-            All
-          </Link>
-        </div> */}
-        {categories.map((category) => (
-          <div
-            key={category?._id}
-            className="relative"
-            onMouseEnter={() => handleMainCategoryHover(category)}
-            onMouseLeave={() => {
-              setActiveMenu(null)
-              setDefaultImage(null)
-              setActiveImage(null)
-            }}
-          >
-            <Link
-              href="/collections"
-              onClick={(e) => handleCategoryClick(e, category)}
-              className="uppercase relative hover:text-[#101b2f] transition-colors after:content-[''] after:absolute after:w-full after:h-0.5 after:bg-[#101b2f] after:left-0 after:bottom-0 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300"
-            >
-              {category.category_name}
-            </Link>
+      <div className="lg:block">
+        {/* Desktop Menu - Fixed display from the image */}
+        <div className="hidden lg:flex justify-center border-t border-b border-gray-300 py-3 bg-white">
+          {mainNavItems.map((item, index) => {
+            // Find the corresponding category if available
+            const matchedCategory = categories.find(cat => 
+              cat.category_name.toUpperCase() === item || 
+              // Handle common mapping cases
+              (item === "WOMEN" && cat.category_name.toUpperCase() === "WOMAN") ||
+              (item === "MEN" && cat.category_name.toUpperCase() === "MAN")
+            )
             
-            <AnimatePresence>
-              {activeMenu === category._id && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-1/2 transform -translate-x-1/2 top-full z-50 w-[1000px] bg-white shadow-lg rounded-lg"
-                  style={{ 
-                    left: '-25vw',
-                    transform: 'translateX(-50%)'
-                  }}
+            return (
+              <div
+                key={index}
+                className="relative px-10"
+                onMouseEnter={() => matchedCategory && handleMainCategoryHover(matchedCategory)}
+                onMouseLeave={handleMenuItemLeave}
+              >
+                <Link
+                  href="/collections"
+                  onClick={(e) => matchedCategory ? handleCategoryClick(e, matchedCategory) : handleAllClick(e)}
+                  className={`uppercase text-[15px] font-medium relative hover:text-gray-600 transition-colors ${
+                    isActive(item) ? "text-gray-600" : "text-black"
+                  }`}
                 >
-                  <div className="grid grid-cols-12 gap-6 p-6">
-                    <div className="col-span-8">
-                      <div className="grid grid-cols-3 gap-6">
-                        {category.sub_categories.map((subCategory) => (
-                          <div 
-                            key={subCategory?._id} 
-                            className="mb-6"
-                            onMouseEnter={() => handleSubCategoryHover(subCategory?.image_url)}
-                            onMouseLeave={() => handleSubCategoryHover(null)}
-                          >
-                            <Link
-                              href="/collections"
-                              onClick={(e) => handleCategoryClick(e, category, subCategory)}
-                              className="font-semibold text-[#101b2f] mb-4 block hover:text-[#5d4f51]"
-                            >
-                              {subCategory?.category_name}
-                            </Link>
-                            {subCategory?.categories?.length > 0 && (
-                              <div className="flex flex-col gap-2 mt-2">
-                                {subCategory?.categories?.map((cat) => (
-                                  <Link
-                                    key={cat?._id}
-                                    href="/collections"
-                                    onClick={(e) => handleCategoryClick(e, category, subCategory, cat)}
-                                    className="block hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                                  >
-                                    <span className="text-gray-600 hover:text-[#101b2f]">
-                                      {cat?.category_name}
-                                    </span>
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="col-span-4">
+                  {item}
+                </Link>
+              </div>
+            )
+          })}
+        </div>
+        
+        {/* Centralized dropdown */}
+        {activeCategory && (
+          <div className="hidden lg:block">
+            <div 
+              className="fixed left-0 right-0 mx-auto z-50 bg-white text-black shadow-lg rounded-lg"
+              style={{
+                width: '800px',
+                maxWidth: '90%',
+                top: '70px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                position: 'absolute',
+                zIndex: 9999
+              }}
+              onMouseEnter={handleDropdownMouseEnter}
+              onMouseLeave={handleDropdownMouseLeave}
+            >
+              <div className="grid grid-cols-12 gap-6 p-6">
+                <div className="col-span-12 md:col-span-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {activeCategory.sub_categories.map((subCategory) => (
                       <div 
-                        className="h-[300px] w-[300px] mx-auto rounded-lg overflow-hidden bg-center bg-no-repeat bg-cover transition-all duration-300"
-                        style={{ 
-                          backgroundImage: `url(${activeImage || defaultImage || category?.image_url})`
-                        }}
-                      />
-                    </div>
+                        key={subCategory?._id} 
+                        className="mb-6"
+                        onMouseEnter={() => handleSubCategoryHover(subCategory?.image_url)}
+                        onMouseLeave={() => handleSubCategoryHover(null)}
+                      >
+                        <Link
+                          href="/collections"
+                          onClick={(e) => handleCategoryClick(e, activeCategory, subCategory)}
+                          className="font-semibold text-[#101b2f] mb-4 block hover:text-[#5d4f51]"
+                        >
+                          {subCategory?.category_name}  
+                        </Link>
+                        {subCategory?.categories?.length > 0 && (
+                          <div className="flex flex-col gap-2 mt-2">
+                            {subCategory?.categories?.map((cat) => (
+                              <Link
+                                key={cat?._id}
+                                href="/collections"
+                                onClick={(e) => handleCategoryClick(e, activeCategory, subCategory, cat)}
+                                className="block hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                              >
+                                <span className="text-gray-600 hover:text-[#101b2f]">
+                                  {cat?.category_name}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
+                </div>
+                <div className="hidden md:block md:col-span-4">
+                  <div 
+                    className="h-[250px] w-full md:w-[250px] mx-auto rounded-lg overflow-hidden bg-center bg-no-repeat bg-cover transition-all duration-300"
+                    style={{ 
+                      backgroundImage: `url(${activeImage || defaultImage || activeCategory?.image_url})`
+                    }}
+                  />
+                </div>
+              </div>
 
-                  <div className="bg-gray-50 p-4 rounded-b-lg">
-                    <Link
-                      href="/collections"
-                      onClick={(e) => handleCategoryClick(e, category)}
-                      className="text-[#101b2f] hover:text-[#5d4f51] font-medium flex items-center gap-2"
-                    >
-                      View All {category?.category_name}
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <div className="bg-gray-50 p-4 rounded-b-lg">
+                <Link
+                  href="/collections"
+                  onClick={(e) => handleCategoryClick(e, activeCategory)}
+                  className="text-[#101b2f] hover:text-[#5d4f51] font-medium flex items-center gap-2"
+                >
+                  View All {activeCategory?.category_name}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
           </div>
-        ))}
+        )}
       </div>
 
       {/* Mobile Menu Dropdown */}
@@ -273,26 +331,30 @@ export function NavMenu() {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden bg-white shadow-lg"
           >
+            {mainNavItems.map((item, index) => {
+              const matchedCategory = categories.find(cat => 
+                cat.category_name.toUpperCase() === item || 
+                (item === "WOMEN" && cat.category_name.toUpperCase() === "WOMAN") ||
+                (item === "MEN" && cat.category_name.toUpperCase() === "MAN")
+              )
+              
+              return (
+                <Link
+                  key={index}
+                  href="/collections"
+                  onClick={(e) => matchedCategory ? handleCategoryClick(e, matchedCategory) : handleAllClick(e)}
+                  className="block px-4 py-2 text-black font-medium hover:bg-gray-100"
+                >
+                  {item}
+                </Link>
+              )
+            })}
             <Link
-              href="/collections"
-              onClick={(e) => {
-                e.preventDefault()
-                handleClearCategories()
-              }}
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+              href="/checkout"
+              className="block px-4 py-2 text-black font-medium hover:bg-gray-100 border-t border-gray-200"
             >
-              All Products
+              CHECKOUT
             </Link>
-            {categories.map((category) => (
-              <Link
-                key={category?._id}
-                href="/collections"
-                onClick={(e) => handleCategoryClick(e, category)}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
-              >
-                {category?.category_name}
-              </Link>
-            ))}
           </motion.div>
         )}
       </AnimatePresence>
