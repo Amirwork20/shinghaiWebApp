@@ -68,7 +68,7 @@ jobs:
             rm -rf .next
             
             # Rebuild this next application
-            NODE_OPTIONS="--max_old_space_size=2048" npm run build || exit 1 
+            env NODE_OPTIONS="--max_old_space_size=4096" npm run build || exit 1 
 
             # Restart the PM2 application
             pm2 restart shinghai.com.pk || exit 1  # Replace 'shinghai.com.pk' with your PM2 app name
