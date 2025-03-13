@@ -47,7 +47,7 @@ jobs:
           chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key $USER@$HOST << 'EOF'
             # Navigate to the project directory
-            cd /var/www/osama.shinghai.com.pk || exit 1
+            cd /var/www/shinghai.com.pk || exit 1
 
             # root user
             sudo su
@@ -63,9 +63,16 @@ jobs:
             else
               echo "---No changes in package.json, skipping dependency reinstallation---"
             fi
+
+            # Remove old .next
+            rm -rf .next
             
-            # Rebuild this react application
+            # Rebuild this next application
             NODE_OPTIONS="--max_old_space_size=2048" npm run build || exit 1 
+
+            # Restart the PM2 application
+            pm2 restart shinghai.com.pk || exit 1  # Replace 'shinghai.com.pk' with your PM2 app name
+
 
             #exit root user
             echo exitRootUser
