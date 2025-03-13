@@ -27,56 +27,56 @@ export default function Navbar() {
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side="left" className="bg-black [&>button]:text-white">
             <nav className="flex flex-col gap-4">
               <Link 
                 href="/" 
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 Home
               </Link>
               <Link 
                 href="/collections"
                 onClick={(e) => handleCategoryClick('main-category', 'all', e)}
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 All Products
               </Link>
               <Link 
                 href="/collections"
                 onClick={(e) => handleCategoryClick('main-category', 'men', e)}
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 Men
               </Link>
               <Link 
                 href="/collections"
                 onClick={(e) => handleCategoryClick('main-category', 'women', e)}
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 Women
               </Link>
               <Link 
                 href="/collections"
                 onClick={(e) => handleCategoryClick('main-category', 'new-arrivals', e)}
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 New Arrivals
               </Link>
               <Link 
                 href="/collections"
                 onClick={(e) => handleCategoryClick('main-category', 'sale', e)}
-                className="text-lg text-black font-medium"
+                className="text-lg text-white font-medium"
               >
                 Sale
               </Link>
-              <Link href="/about" className="text-lg text-black font-medium">
+              <Link href="/about" className="text-lg text-white font-medium">
                 About
               </Link>
-              <Link href="/contact" className="text-lg text-black font-medium">
+              <Link href="/contact" className="text-lg text-white font-medium">
                 Contact
               </Link>
-              <Link href="/track-order" className="text-lg text-black font-medium">
+              <Link href="/track-order" className="text-lg text-white font-medium">
                 Track Order
               </Link>
             </nav>
