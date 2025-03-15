@@ -4,6 +4,7 @@ import { Pagination, Mousewheel, EffectCreative } from 'swiper/modules';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { FaWhatsapp, FaPlay, FaPause, FaVolumeMute, FaVolumeUp } from 'react-icons/fa';
+import Image from 'next/image';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -15,12 +16,14 @@ import Footer from './components/mainpage/Footer';
 export default function Home() {
   const router = useRouter();
   const [media, setMedia] = useState([]);
+  const [loadedMedia, setLoadedMedia] = useState({});
   const [activeIndex, setActiveIndex] = useState(0);
   const [videoControls, setVideoControls] = useState({
     playing: true,
     muted: true
   });
   const videoRefs = useRef({});
+  const mediaObserver = useRef(null);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -32,11 +35,25 @@ export default function Home() {
           if (data.media && Array.isArray(data.media)) {
             console.log('Found media data:', data.media);
             setMedia(data.media);
+            
+            // Initialize loaded state for each media item
+            const initialLoadState = {};
+            data.media.forEach((item, index) => {
+              initialLoadState[index] = false;
+            });
+            setLoadedMedia(initialLoadState);
           } 
           // Fallback to images array for backward compatibility
           else if (data.images && Array.isArray(data.images)) {
             console.log('Found legacy image data:', data.images);
             setMedia(data.images.map(url => ({ url, type: 'image' })));
+            
+            // Initialize loaded state for each media item
+            const initialLoadState = {};
+            data.images.forEach((_, index) => {
+              initialLoadState[index] = false;
+            });
+            setLoadedMedia(initialLoadState);
           } else {
             console.log('No media found in response');
             setMedia([]);
@@ -48,6 +65,35 @@ export default function Home() {
     };
 
     fetchMedia();
+    
+    // Setup Intersection Observer for lazy loading
+    const options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+    
+    mediaObserver.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = Number(entry.target.dataset.index);
+          if (!loadedMedia[index]) {
+            // Mark this media as loading/loaded
+            setLoadedMedia(prev => ({
+              ...prev,
+              [index]: true
+            }));
+          }
+        }
+      });
+    }, options);
+    
+    return () => {
+      // Clean up observer
+      if (mediaObserver.current) {
+        mediaObserver.current.disconnect();
+      }
+    };
   }, []);
 
   // Handle slide change to control videos
@@ -71,7 +117,31 @@ export default function Home() {
         video.play().catch(e => console.error('Error playing video:', e));
       }
     }
+    
+    // Set this slide as loaded
+    setLoadedMedia(prev => ({
+      ...prev,
+      [index]: true
+    }));
   };
+
+  // Set up observer for media elements
+  useEffect(() => {
+    const observer = mediaObserver.current;
+    if (!observer) return;
+    
+    // Register all current media items with the observer
+    document.querySelectorAll('.media-slide-item').forEach(element => {
+      observer.observe(element);
+    });
+    
+    return () => {
+      // Clean up by unobserving all elements
+      document.querySelectorAll('.media-slide-item').forEach(element => {
+        observer.unobserve(element);
+      });
+    };
+  }, [media]);
 
   const handleWhatsAppClick = () => {
     // Replace with your WhatsApp number
@@ -109,25 +179,55 @@ export default function Home() {
   };
 
   const renderMediaSlide = (item, index) => {
+    // Check if the media should be loaded
+    const shouldLoad = loadedMedia[index] || index === activeIndex || index === activeIndex + 1 || index === activeIndex - 1;
+    
+    // Check for placeholder
+    const hasPlaceholder = item.placeholderUrl || item.posterUrl;
+    
     if (item.type === 'video') {
       return (
         <SwiperSlide key={index}>
           <div 
-            className="relative w-full h-full cursor-pointer"
+            className="relative w-full h-full cursor-pointer media-slide-item"
             onClick={() => router.push('/collections')}
+            data-index={index}
           >
-            <video
-              ref={el => videoRefs.current[index] = el}
-              src={item.url}
-              autoPlay={index === activeIndex && videoControls.playing}
-              muted={videoControls.muted}
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            />
+            {/* Poster/placeholder image for video */}
+            {item.posterUrl && !shouldLoad && (
+              <div className="absolute w-full h-full bg-black">
+                <Image
+                  src={item.posterUrl}
+                  alt="Video poster"
+                  layout="fill"
+                  objectFit="cover"
+                  priority={index === 0}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black bg-opacity-50 text-white p-4 rounded-full">
+                    <FaPlay size={40} />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Only load video when needed */}
+            {shouldLoad && (
+              <video
+                ref={el => videoRefs.current[index] = el}
+                src={item.url}
+                poster={item.posterUrl}
+                autoPlay={index === activeIndex && videoControls.playing}
+                muted={videoControls.muted}
+                preload="metadata"
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            )}
             
             {/* Video Controls - Only shown on active slide */}
-            {index === activeIndex && (
+            {index === activeIndex && shouldLoad && (
               <div className="absolute bottom-4 right-4 flex gap-2">
                 <button 
                   onClick={(e) => {
@@ -154,18 +254,65 @@ export default function Home() {
       );
     }
 
-    // Image slide
+    // Image slide - use Next.js Image for optimization
     return (
       <SwiperSlide 
         key={index}
         onClick={() => router.push('/collections')}
-        style={{
-          backgroundImage: `url("${item.url}")`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          cursor: 'pointer'
-        }}
-      />
+        className="relative"
+      >
+        <div 
+          className="w-full h-full media-slide-item"
+          data-index={index}
+        >
+          {/* Show placeholder while main image loads */}
+          {hasPlaceholder && (
+            <div 
+              className={`absolute inset-0 transition-opacity duration-500 ${shouldLoad ? 'opacity-0' : 'opacity-100'}`}
+              style={{
+                backgroundImage: `url("${item.placeholderUrl}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'blur(8px)'
+              }}
+            />
+          )}
+          
+          {/* Load actual image when needed */}
+          {shouldLoad ? (
+            <div className="w-full h-full">
+              <Image
+                src={item.url}
+                alt={`Slide ${index + 1}`}
+                layout="fill"
+                objectFit="cover"
+                priority={index === 0}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                sizes="100vw"
+                className="transition-opacity duration-500"
+                onLoad={() => {
+                  // Update loaded state when image fully loads
+                  setLoadedMedia(prev => ({
+                    ...prev,
+                    [index]: true
+                  }));
+                }}
+              />
+            </div>
+          ) : (
+            // Simplified background for non-loaded slides
+            <div 
+              className="w-full h-full"
+              style={{
+                backgroundImage: item.placeholderUrl ? `url("${item.placeholderUrl}")` : `url("${item.url}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: item.placeholderUrl ? 'blur(8px)' : 'none'
+              }}
+            />
+          )}
+        </div>
+      </SwiperSlide>
     );
   };
 
@@ -196,6 +343,13 @@ export default function Home() {
           }}
           className="mySwiper"
           onSlideChange={handleSlideChange}
+          lazy={{
+            loadPrevNext: true,
+            loadPrevNextAmount: 1,
+            loadOnTransitionStart: true,
+            preloadImages: false
+          }}
+          watchSlidesProgress={true}
         >
           {media.map((item, index) => renderMediaSlide(item, index))}
           <SwiperSlide>
@@ -217,6 +371,13 @@ export default function Home() {
           modules={[Pagination, Mousewheel]}
           className="mySwiper"
           onSlideChange={handleSlideChange}
+          lazy={{
+            loadPrevNext: true,
+            loadPrevNextAmount: 1,
+            loadOnTransitionStart: true,
+            preloadImages: false
+          }}
+          watchSlidesProgress={true}
         >
           {media.map((item, index) => renderMediaSlide(item, index))}
           <SwiperSlide>
@@ -263,6 +424,16 @@ export default function Home() {
           .desktop-swiper {
             display: block;
           }
+        }
+        
+        /* Add fade-in animation for smoother loading */
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        .media-slide-item img.loaded {
+          animation: fadeIn 0.5s ease-in;
         }
       `}</style>
     </>
