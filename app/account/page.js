@@ -46,6 +46,7 @@ export default function AccountPage() {
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn')
+    localStorage.removeItem('currentUser')
     setIsLoggedIn(false)
   }
 
@@ -56,9 +57,25 @@ export default function AccountPage() {
     setLoading(true)
 
     try {
-      // For demonstration, we'll simulate success
-      localStorage.setItem('isLoggedIn', 'true')
-      setIsLoggedIn(true)
+      // Get stored users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      
+      // Find user with matching email
+      const user = users.find(user => user.email === loginData.email)
+      
+      // Check if user exists and password matches
+      if (user && user.password === loginData.password) {
+        // Login successful
+        localStorage.setItem('isLoggedIn', 'true')
+        localStorage.setItem('currentUser', JSON.stringify({ 
+          name: user.name, 
+          email: user.email 
+        }))
+        setIsLoggedIn(true)
+      } else {
+        // Login failed
+        setError('Invalid email or password')
+      }
     } catch (error) {
       console.error('Login error:', error)
       setError('Failed to login. Please try again.')
@@ -81,9 +98,36 @@ export default function AccountPage() {
     setLoading(true)
 
     try {
-      // For demonstration, we'll simulate success
+      // Get existing users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      
+      // Check if email already exists
+      if (users.some(user => user.email === signupData.email)) {
+        setError('Email already in use')
+        setLoading(false)
+        return
+      }
+      
+      // Add new user
+      const newUser = {
+        name: signupData.name,
+        email: signupData.email,
+        password: signupData.password
+      }
+      
+      users.push(newUser)
+      
+      // Save updated users array
+      localStorage.setItem('users', JSON.stringify(users))
+      
+      // Log in the new user
       localStorage.setItem('isLoggedIn', 'true')
+      localStorage.setItem('currentUser', JSON.stringify({ 
+        name: newUser.name, 
+        email: newUser.email 
+      }))
       setIsLoggedIn(true)
+      
     } catch (error) {
       console.error('Signup error:', error)
       setError('Failed to create account. Please try again.')
@@ -103,6 +147,11 @@ export default function AccountPage() {
             <div className="p-6 bg-green-50 rounded-lg border border-green-200">
               <h2 className="text-xl font-medium text-green-800 mb-2">Already Logged In</h2>
               <p className="text-green-700">You are currently logged in to your account.</p>
+              {localStorage.getItem('currentUser') && (
+                <p className="mt-2 text-green-700">
+                  Welcome, {JSON.parse(localStorage.getItem('currentUser')).name}!
+                </p>
+              )}
             </div>
             <Button 
               onClick={handleLogout} 
