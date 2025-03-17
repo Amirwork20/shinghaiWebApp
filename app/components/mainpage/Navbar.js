@@ -7,20 +7,42 @@ import { Button } from "../ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet"
 import { useCategory } from "../../context/CategoryContext"
 import { useCart } from "../../context/CartContext"
+import { useState, useEffect } from "react"
 
 export default function Navbar() {
-  const { handleCategoryChange } = useCategory()
+  const { handleCategoryChange, handleClearCategories } = useCategory()
   const { cartItems } = useCart()
+  const [categories, setCategories] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleCategoryClick = (type, value, e) => {
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/web/category-hierarchy`)
+        const data = await response.json()
+        if (data.success) {
+          setCategories(data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  const handleCategoryClick = (type, id, name, e) => {
     e.preventDefault()
-    handleCategoryChange(type, value)
+    handleCategoryChange(type, id, name)
   }
 
   return (
     <header className="absolute top-0 z-50 w-full">
       <div className="container flex h-14 items-center">
-        <Sheet>
+        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="mr-4 text-black hover:bg-red-700">
               <Menu className="h-5 w-5" />
@@ -32,53 +54,47 @@ export default function Navbar() {
               <Link 
                 href="/" 
                 className="text-lg text-white font-medium"
+                onClick={(e) => {
+                  setIsMenuOpen(false)
+                }}
               >
                 Home
               </Link>
               <Link 
                 href="/collections"
-                onClick={(e) => handleCategoryClick('main-category', 'all', e)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleClearCategories();
+                  // Navigate programmatically after clearing categories
+                  window.location.href = "/collections";
+                }}
                 className="text-lg text-white font-medium"
               >
                 All Products
               </Link>
-              <Link 
-                href="/collections"
-                onClick={(e) => handleCategoryClick('main-category', 'men', e)}
-                className="text-lg text-white font-medium"
-              >
-                Men
-              </Link>
-              <Link 
-                href="/collections"
-                onClick={(e) => handleCategoryClick('main-category', 'women', e)}
-                className="text-lg text-white font-medium"
-              >
-                Women
-              </Link>
-              <Link 
-                href="/collections"
-                onClick={(e) => handleCategoryClick('main-category', 'new-arrivals', e)}
-                className="text-lg text-white font-medium"
-              >
-                New Arrivals
-              </Link>
-              <Link 
-                href="/collections"
-                onClick={(e) => handleCategoryClick('main-category', 'sale', e)}
-                className="text-lg text-white font-medium"
-              >
-                Sale
-              </Link>
-              <Link href="/about" className="text-lg text-white font-medium">
+              
+              {/* Dynamic Categories from API */}
+              {!isLoading && categories.map((category) => (
+                <Link 
+                  key={category._id}
+                  href="/collections"
+                  onClick={(e) => handleCategoryClick('main-category', category._id, category.category_name, e)}
+                  className="text-lg text-white font-medium"
+                >
+                  {category.category_name}
+                </Link>
+              ))}
+              
+              {/* Static navigation items */}
+              <Link href="/about-us" className="text-lg text-white font-medium">
                 About
               </Link>
-              <Link href="/contact" className="text-lg text-white font-medium">
+              <Link href="/contact-us" className="text-lg text-white font-medium">
                 Contact
               </Link>
-              <Link href="/track-order" className="text-lg text-white font-medium">
+              {/* <Link href="/track-order" className="text-lg text-white font-medium">
                 Track Order
-              </Link>
+              </Link> */}
             </nav>
           </SheetContent>
         </Sheet>

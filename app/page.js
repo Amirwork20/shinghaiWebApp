@@ -320,6 +320,17 @@ export default function Home() {
     <>
       <Navbar/>
       
+      {/* Loading overlay */}
+      {media.length === 0 && (
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+          <img 
+            src="/Shinghai Brand Assets/PNG Assets-Shinghai Official-01.png" 
+            alt="Loading..." 
+            className="w-44"
+          />
+        </div>
+      )}
+
       {/* Mobile Swiper with EffectCreative */}
       <div className="mobile-swiper">
         <Swiper

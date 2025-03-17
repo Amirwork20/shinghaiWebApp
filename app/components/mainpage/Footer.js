@@ -37,9 +37,9 @@ export default function Footer() {
               <li><Link href="/faqs">FAQs</Link></li>
               <li><Link href="/privacy-policy">Privacy Policy</Link></li>
               <li><Link href="/exchange-policy">Exchange Policy</Link></li>
-              <li><Link href="/shipping-policy">Shipping Policy</Link></li>
+              {/* <li><Link href="/shipping-policy">Shipping Policy</Link></li>
               <li><Link href="/international-policy">International Policy</Link></li>
-              <li><Link href="/store-locator">Store Locator</Link></li>
+              <li><Link href="/store-locator">Store Locator</Link></li> */}
             </ul>
           </div>
 
@@ -49,7 +49,7 @@ export default function Footer() {
             <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
               <li><Link href="/about-us">About Us</Link></li>
               <li><Link href="/contact-us">Contact Us</Link></li>
-              <li><Link href="/look-book">Look Book</Link></li>
+             {/* <li><Link href="/look-book">Look Book</Link></li> */}
             </ul>
           </div>
 
@@ -91,7 +91,7 @@ export default function Footer() {
         <div className="pt-4 md:pt-8 mt-4 md:mt-8 text-xs md:text-sm text-gray-600 border-t">
           <div className="flex flex-col justify-between gap-2 md:gap-4 md:flex-row">
             <p>© 2025 Shinghai - All Rights Reserved.</p>
-            <p>Powered by Commerce by Ginkgo Retail</p>
+            <p>Powered by Commerce by Shinghai</p>
           </div>
         </div>
       </div>

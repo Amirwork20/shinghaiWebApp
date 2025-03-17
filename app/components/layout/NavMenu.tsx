@@ -160,9 +160,6 @@ export function NavMenu() {
     )
   }
 
-  // Fixed main navigation items based on image
-  const mainNavItems = ["WOMEN", "GIRLS", "MEN", "ACCESSORIES", "SALE"]
-
   // Find the active category
   const activeCategory = categories.find(cat => cat._id === activeMenu);
 
@@ -209,36 +206,26 @@ export function NavMenu() {
       </div>
 
       <div className="lg:block">
-        {/* Desktop Menu - Fixed display from the image */}
+        {/* Desktop Menu - Use actual categories from API */}
         <div className="hidden lg:flex justify-center border-t border-b border-gray-300 py-3 bg-white">
-          {mainNavItems.map((item, index) => {
-            // Find the corresponding category if available
-            const matchedCategory = categories.find(cat => 
-              cat.category_name.toUpperCase() === item || 
-              // Handle common mapping cases
-              (item === "WOMEN" && cat.category_name.toUpperCase() === "WOMAN") ||
-              (item === "MEN" && cat.category_name.toUpperCase() === "MAN")
-            )
-            
-            return (
-              <div
-                key={index}
-                className="relative px-10"
-                onMouseEnter={() => matchedCategory && handleMainCategoryHover(matchedCategory)}
-                onMouseLeave={handleMenuItemLeave}
+          {categories.map((category) => (
+            <div
+              key={category._id}
+              className="relative px-10"
+              onMouseEnter={() => handleMainCategoryHover(category)}
+              onMouseLeave={handleMenuItemLeave}
+            >
+              <Link
+                href="/collections"
+                onClick={(e) => handleCategoryClick(e, category)}
+                className={`uppercase text-[15px] font-medium relative hover:text-gray-600 transition-colors ${
+                  isActive(category.category_name) ? "text-gray-600" : "text-black"
+                }`}
               >
-                <Link
-                  href="/collections"
-                  onClick={(e) => matchedCategory ? handleCategoryClick(e, matchedCategory) : handleAllClick(e)}
-                  className={`uppercase text-[15px] font-medium relative hover:text-gray-600 transition-colors ${
-                    isActive(item) ? "text-gray-600" : "text-black"
-                  }`}
-                >
-                  {item}
-                </Link>
-              </div>
-            )
-          })}
+                {category.category_name}
+              </Link>
+            </div>
+          ))}
         </div>
         
         {/* Centralized dropdown */}
@@ -331,24 +318,16 @@ export function NavMenu() {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden bg-white shadow-lg"
           >
-            {mainNavItems.map((item, index) => {
-              const matchedCategory = categories.find(cat => 
-                cat.category_name.toUpperCase() === item || 
-                (item === "WOMEN" && cat.category_name.toUpperCase() === "WOMAN") ||
-                (item === "MEN" && cat.category_name.toUpperCase() === "MAN")
-              )
-              
-              return (
-                <Link
-                  key={index}
-                  href="/collections"
-                  onClick={(e) => matchedCategory ? handleCategoryClick(e, matchedCategory) : handleAllClick(e)}
-                  className="block px-4 py-2 text-black font-medium hover:bg-gray-100"
-                >
-                  {item}
-                </Link>
-              )
-            })}
+            {categories.map((category) => (
+              <Link
+                key={category._id}
+                href="/collections"
+                onClick={(e) => handleCategoryClick(e, category)}
+                className="block px-4 py-2 text-black font-medium hover:bg-gray-100"
+              >
+                {category.category_name}
+              </Link>
+            ))}
             <Link
               href="/checkout"
               className="block px-4 py-2 text-black font-medium hover:bg-gray-100 border-t border-gray-200"
