@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Heart, Share2, ChevronDown, X } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from "react"
+import { ChevronLeft, ChevronRight, Heart, Share2, ChevronDown, X, Loader2 } from 'lucide-react'
 import { Button } from "../../components/ui/button"
 import {
   Collapsible,
@@ -13,11 +13,11 @@ import { useParams } from "next/navigation"
 import { useCart } from '../../context/CartContext'
 import Link from 'next/link'
 
-export default function ProductDetail( ) {
+export default function ProductDetail() {
   const params = useParams()
-  console.log(params)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -27,45 +27,66 @@ export default function ProductDetail( ) {
   const [showSizeGuide, setShowSizeGuide] = useState(false)
   const [measurementUnit, setMeasurementUnit] = useState('IN') // 'IN' or 'CM'
   const [showCartModal, setShowCartModal] = useState(false)
+  const [autoSlide, setAutoSlide] = useState(true)
   const { addToCart, cartItems } = useCart()
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/web/product/${params?.id}`)
-        const data = await response.json()
-        if (data.success) {
-          setProduct(data.data)
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        setLoading(false)
+  const fetchProduct = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/web/product/${params?.id}`)
+      const data = await response.json()
+      if (data.success) {
+        setProduct(data.data)
+        // Preload critical images
+        const img = new Image()
+        img.src = data.data.image_url
+        img.onload = () => setImagesLoaded(true)
       }
+    } catch (error) {
+      console.error('Error fetching product:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchProduct()
   }, [params?.id])
 
-  // Add auto-sliding functionality
   useEffect(() => {
-    if (!product) return;
+    fetchProduct()
+  }, [fetchProduct])
+
+  // Add auto-sliding functionality - but only when not interacting with images
+  useEffect(() => {
+    if (!product || !autoSlide || showMagnifier) return
     
     const images = [product.image_url, ...(product.tabs_image_url || [])]
     const interval = setInterval(() => {
       setSelectedImage((prev) => (prev + 1) % images.length)
-    }, 3000) // Change image every 1 second
+    }, 3000)
 
-    // Clear interval on component unmount or when hovering
     return () => clearInterval(interval)
-  }, [product, showMagnifier]) // Reset interval when product changes or magnifier state changes
+  }, [product, showMagnifier, autoSlide])
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-[50vh]">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">Loading product details...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!product) {
-    return <div>Product not found</div>
+    return (
+      <div className="container mx-auto px-4 py-16 flex justify-center items-center min-h-[50vh]">
+        <div className="text-center">
+          <p className="text-gray-700 text-xl">Product not found</p>
+          <Link href="/collections" className="text-blue-600 hover:underline mt-4 inline-block">
+            Browse our collections
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   const images = [
@@ -83,6 +104,15 @@ export default function ProductDetail( ) {
     setShowCartModal(true)
   }
 
+  const handleImageNavigation = (direction) => {
+    setAutoSlide(false)
+    if (direction === 'prev') {
+      setSelectedImage(prev => (prev > 0 ? prev - 1 : images.length - 1))
+    } else {
+      setSelectedImage(prev => (prev < images.length - 1 ? prev + 1 : 0))
+    }
+  }
+
   return (
     <>
     <div className="container mx-auto px-4 py-8">
@@ -90,10 +120,16 @@ export default function ProductDetail( ) {
         {/* Image Section */}
         <div className="order-1 lg:order-2 lg:col-span-1">
           {/* Main Image Slider */}
-          <div className="relative aspect-[3/4] w-full overflow-hidden">
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
+            {!imagesLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            )}
             <button 
               className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white p-2 shadow-md"
-              onClick={() => setSelectedImage(prev => (prev > 0 ? prev - 1 : images.length - 1))}
+              onClick={() => handleImageNavigation('prev')}
+              aria-label="Previous image"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -101,14 +137,20 @@ export default function ProductDetail( ) {
             <div
               ref={imageRef}
               className="h-full w-full relative overflow-hidden"
-              onMouseEnter={() => setShowMagnifier(true)}
+              onMouseEnter={() => {
+                setShowMagnifier(true)
+                setAutoSlide(false)
+              }}
               onMouseLeave={() => {
                 setShowMagnifier(false)
-                imageRef.current.style.transform = 'scale(1)'
-                imageRef.current.style.transformOrigin = 'center'
+                if (imageRef.current) {
+                  imageRef.current.style.transform = 'scale(1)'
+                  imageRef.current.style.transformOrigin = 'center'
+                }
+                setAutoSlide(true)
               }}
               onMouseMove={(e) => {
-                if (!showMagnifier) return
+                if (!showMagnifier || !imageRef.current) return
                 const rect = imageRef.current.getBoundingClientRect()
                 const x = ((e.pageX - rect.left) / rect.width) * 100
                 const y = ((e.pageY - rect.top) / rect.height) * 100
@@ -139,10 +181,32 @@ export default function ProductDetail( ) {
 
             <button 
               className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white p-2 shadow-md"
-              onClick={() => setSelectedImage(prev => (prev < images.length - 1 ? prev + 1 : 0))}
+              onClick={() => handleImageNavigation('next')}
+              aria-label="Next image"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
+            
+            {/* Navigation Dots */}
+            {images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSelectedImage(index)
+                      setAutoSlide(false)
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      selectedImage === index 
+                        ? "bg-white scale-125 shadow-sm" 
+                        : "bg-white/50 hover:bg-white/70"
+                    }`}
+                    aria-label={`View image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Thumbnail Gallery - Below slider on mobile */}
@@ -150,7 +214,10 @@ export default function ProductDetail( ) {
             {images.map((src, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedImage(index)}
+                onClick={() => {
+                  setSelectedImage(index)
+                  setAutoSlide(false)
+                }}
                 className={`relative aspect-square border-2 ${
                   selectedImage === index ? "border-red-600" : "border-transparent"
                 }`}
@@ -159,6 +226,7 @@ export default function ProductDetail( ) {
                   src={src}
                   alt={`Product view ${index + 1}`}
                   className="object-cover w-full h-full"
+                  loading="lazy"
                 />
               </button>
             ))}
@@ -205,7 +273,7 @@ export default function ProductDetail( ) {
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{attribute.en_attribute_name || 'Color'}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {attribute.values.map((value) => (
                       <button
                         key={value}
@@ -240,8 +308,8 @@ export default function ProductDetail( ) {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantity(prev => Math.min(product.max_quantity_per_user, prev + 1))}
-                  disabled={quantity >= product.max_quantity_per_user}
+                  onClick={() => setQuantity(prev => Math.min(product.max_quantity_per_user || 10, prev + 1))}
+                  disabled={quantity >= (product.max_quantity_per_user || 10)}
                 >
                   +
                 </Button>
@@ -264,7 +332,7 @@ export default function ProductDetail( ) {
                   <ChevronDown className="h-5 w-5" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-2 text-sm text-gray-600">
-                  {product.care_instructions}
+                  {product.care_instructions || 'No care instructions available'}
                 </CollapsibleContent>
               </Collapsible>
 
@@ -274,7 +342,7 @@ export default function ProductDetail( ) {
                   <ChevronDown className="h-5 w-5" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-2 text-sm text-gray-600">
-                  {product.disclaimer}
+                  {product.disclaimer || 'No disclaimer available'}
                 </CollapsibleContent>
               </Collapsible>
             </div>
@@ -288,7 +356,10 @@ export default function ProductDetail( ) {
             {images.map((src, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedImage(index)}
+                onClick={() => {
+                  setSelectedImage(index)
+                  setAutoSlide(false)
+                }}
                 className={`relative aspect-square border-2 ${
                   selectedImage === index ? "border-red-600" : "border-transparent"
                 }`}
@@ -297,6 +368,7 @@ export default function ProductDetail( ) {
                   src={src}
                   alt={`Product view ${index + 1}`}
                   className="object-cover w-full h-full"
+                  loading="lazy"
                 />
               </button>
             ))}
@@ -305,10 +377,10 @@ export default function ProductDetail( ) {
           {/* Description Content */}
           <h2 className="text-lg font-semibold">Description</h2>
           <div className="space-y-4 text-sm">
-            <p>{product.description}</p>
-            <p>Fabric: {product.fabric?.fabric_name}</p>
-            <p>SKU: {product.sku}</p>
-            <p>Category: {product.category?.category_name}</p>
+            <p>{product.description || 'No description available'}</p>
+            <p>Fabric: {product.fabric?.fabric_name || 'N/A'}</p>
+            <p>SKU: {product.sku || 'N/A'}</p>
+            <p>Category: {product.category?.category_name || 'N/A'}</p>
           </div>
 
           {/* Care Instructions & Disclaimer - Mobile Only */}
@@ -319,7 +391,7 @@ export default function ProductDetail( ) {
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2 text-sm text-gray-600">
-                {product.care_instructions}
+                {product.care_instructions || 'No care instructions available'}
               </CollapsibleContent>
             </Collapsible>
 
@@ -329,7 +401,7 @@ export default function ProductDetail( ) {
                 <ChevronDown className="h-5 w-5" />
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2 text-sm text-gray-600">
-                {product.disclaimer}
+                {product.disclaimer || 'No disclaimer available'}
               </CollapsibleContent>
             </Collapsible>
           </div>
@@ -426,7 +498,7 @@ export default function ProductDetail( ) {
           />
           <div>
             <h4 className="font-medium text-black">{product.title}</h4>
-            <p className="text-sm text-black">Size: {selectedSize}</p>
+            {selectedSize && <p className="text-sm text-black">Size: {selectedSize}</p>}
             <p className="text-sm text-black">Quantity: {quantity}</p>
             <p className="font-medium mt-2 text-black">Rs. {product.price.toLocaleString()}</p>
           </div>
@@ -447,14 +519,13 @@ export default function ProductDetail( ) {
             </Button>
           </Link>
         </div>
-  <Link href="/payment">
-        <Button 
-          className="w-full mt-4 bg-transparent text-black hover:bg-gray-100 border border-black"
-        >
-          CHECKOUT
-        </Button>
-         </Link>
-        
+        <Link href="/payment">
+          <Button 
+            className="w-full mt-4 bg-transparent text-black hover:bg-gray-100 border border-black"
+          >
+            CHECKOUT
+          </Button>
+        </Link>
       </DialogContent>  
     </Dialog>
     </>

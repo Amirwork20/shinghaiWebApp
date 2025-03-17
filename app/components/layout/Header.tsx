@@ -29,7 +29,7 @@ export function Header() {
   return (
     <header>
       {/* Top Bar with 3 sections - Black background */}
-      <div className="bg-black text-white">
+      <div className="bg-[#002a2a] text-white">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between py-2">
             {/* Left Section: WhatsApp, Phone & Search */}
@@ -49,11 +49,11 @@ export function Header() {
                   <Input
                     type="search"
                     placeholder="Search..."
-                    className="pl-8 pr-4 py-1 w-[180px] lg:w-[220px] bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-gray-700"
+                    className="pl-8 pr-4 py-1 w-[180px] lg:w-[220px] bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-gray-300"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
+                  <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-500" />
                 </form>
               </div>
             </div>
@@ -97,11 +97,11 @@ export function Header() {
               <Input
                 type="search"
                 placeholder="Search..."
-                className="pl-8 pr-4 py-1.5 w-full rounded-lg bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                className="pl-8 pr-4 py-1.5 w-full rounded-lg bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-2 top-2.5 text-gray-500" />
             </form>
           </div>
         </div>

@@ -22,6 +22,7 @@ export default function CollectionsPage() {
   const [fabrics, setFabrics] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
   const { getCurrentCategoryName, activeCategory, handleCategoryChange } =
     useCategory();
   const {
@@ -71,6 +72,17 @@ export default function CollectionsPage() {
 
     fetchCategories();
   }, []);
+
+  // Track category changes
+  useEffect(() => {
+    setIsCategoryChanging(true);
+    // Add a short timeout to improve perceived performance
+    const timer = setTimeout(() => {
+      setIsCategoryChanging(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [activeCategory.mainCategory.id, activeCategory.subCategory.id, activeCategory.category.id]);
 
   // Get default categories if none are selected
   const defaultMainCategory = categories[0] || {};
@@ -154,6 +166,8 @@ export default function CollectionsPage() {
 
   const handleCategoryClick = (e, mainCategory, subCategory, category) => {
     e.preventDefault();
+    setIsCategoryChanging(true);
+    
     if (category && subCategory) {
       // When clicking a sub-sub-category (category)
       handleCategoryChange("category", category._id, category.category_name, {
@@ -187,6 +201,9 @@ export default function CollectionsPage() {
         mainCategory.category_name
       );
     }
+    
+    // Scroll to top when changing categories for better UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -273,6 +290,7 @@ export default function CollectionsPage() {
                         src={category.image_url}
                         alt={category.category_name}
                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                        loading="lazy"
                       />
                     </div>
                     <span className="text-[10px] sm:text-xs md:text-sm font-medium">
@@ -495,7 +513,13 @@ export default function CollectionsPage() {
               <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
                 {getCurrentCategoryName().toUpperCase()}
               </h1>
-              <ProductGrid />
+              {isCategoryChanging ? (
+                <div className="min-h-[400px] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+                </div>
+              ) : (
+                <ProductGrid />
+              )}
             </div>
           </div>
         </main>
