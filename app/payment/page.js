@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useCart } from '../context/CartContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
+import { Toaster } from 'react-hot-toast'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -92,8 +94,25 @@ export default function CheckoutPage() {
   }
 
   const handleSubmit = async () => {
-    if (!formData.email || !formData.firstName || !formData.address || !formData.phone || !formData.deliveryCity) {
-      alert('Please fill in all required fields')
+    // Validate required fields
+    const errors = []
+    
+    if (!formData.email) errors.push('Email address is required')
+    if (!formData.firstName) errors.push('First name is required')
+    if (!formData.address) errors.push('Shipping address is required')
+    if (!formData.phone) errors.push('Phone number is required')
+    if (!formData.deliveryCity) errors.push('Delivery city is required')
+
+    if (errors.length > 0) {
+      toast.error(
+        <div className="space-y-2">
+          <div className="font-medium">Please fix these errors:</div>
+          {errors.map((error, index) => (
+            <div key={index}>• {error}</div>
+          ))}
+        </div>,
+        { duration: 5000 }
+      )
       return
     }
 
@@ -134,7 +153,7 @@ export default function CheckoutPage() {
       // Also store current location for return visits
       localStorage.setItem('previousLocation', '/payment')
 
-      const response = await fetch('http://localhost:5000/api/v1/web/create-order', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/web/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,13 +187,14 @@ export default function CheckoutPage() {
         
         // Clear cart and redirect to success page
         clearCart()
+        toast.success('Order placed successfully!')
         router.push('/order-success')
       } else {
-        alert('Failed to place order: ' + data.message)
+        toast.error(`Failed to place order: ${data.message}`)
       }
     } catch (error) {
       console.error('Error placing order:', error)
-      alert('Failed to place order. Please try again.')
+      toast.error('Failed to place order. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -185,6 +205,7 @@ export default function CheckoutPage() {
     // Store the current page (checkout) in localStorage
     localStorage.setItem('previousLocation', '/payment')
     // Navigate to the account page
+    toast.loading('Redirecting to login...')
     router.push('/account')
   }
 
@@ -204,6 +225,7 @@ export default function CheckoutPage() {
       orderNotes: ''
     })
     setSavedInfoExists(false)
+    toast.success('Saved information cleared')
   }
 
   // If cart is empty, redirect or show message
@@ -224,6 +246,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Toaster position="top-center" reverseOrder={false} />
       <header className="border-b py-4 sticky top-0 bg-white z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <img
@@ -304,6 +327,7 @@ export default function CheckoutPage() {
                 value={formData.deliveryCity || ""}
                 defaultValue={formData.deliveryCity || ""}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, deliveryCity: value }))}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select city from dropdown" />
