@@ -76,4 +76,5 @@ jobs:
 
             #exit root user
             echo exitRootUser
+            exit
           EOF
