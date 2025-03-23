@@ -16,6 +16,46 @@ export default function CartPage() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
+  // Helper function to generate a unique key for each cart item
+  const getItemKey = (item) => {
+    const attributesKey = item.attributes ? Object.entries(item.attributes)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([key, value]) => `${key}:${value}`)
+      .join('-') : '';
+    
+    return `${item.id}-${attributesKey}`;
+  };
+
+  // Function to render attributes in a readable format
+  const renderAttributes = (item) => {
+    if (!item.attributes || Object.keys(item.attributes).length === 0) {
+      return null;
+    }
+
+    if (item.attributeLabels) {
+      return (
+        <div className="space-y-1">
+          {Object.values(item.attributeLabels).map((attr, index) => (
+            <p key={index} className="text-sm text-muted-foreground">
+              {attr.name}: {attr.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback if attributeLabels is not available
+    return (
+      <div className="space-y-1">
+        {Object.entries(item.attributes).map(([key, value], index) => (
+          <p key={index} className="text-sm text-muted-foreground">
+            Attribute: {value}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div>
     <TopBanner/>
@@ -24,7 +64,7 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
         <div className="space-y-6">
           {cartItems.map(item => (
-            <div key={`${item.id}-${item.size}`} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
+            <div key={getItemKey(item)} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
               <div className="w-full sm:w-48 h-48 relative">
                 <img
                   src={item.image_url}
@@ -37,28 +77,28 @@ export default function CartPage() {
                   <div>
                     <h3 className="font-medium text-lg">{item.title}</h3>
                     <p className="text-sm text-muted-foreground">{item.sku}</p>
-                    <p className="text-sm text-muted-foreground">Size: {item.size}</p>
+                    {renderAttributes(item)}
                   </div>
                   <p className="font-medium">Rs. {item.price.toLocaleString()}</p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
                   <div className="flex items-center border rounded-md">
                     <button
-                      onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.id, item.attributes, item.quantity - 1)}
                       className="px-3 py-1 border-r hover:bg-muted"
                     >
                       -
                     </button>
                     <span className="px-4 py-1">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.id, item.attributes, item.quantity + 1)}
                       className="px-3 py-1 border-l hover:bg-muted"
                     >
                       +
                     </button>
                   </div>
                   <button
-                    onClick={() => removeFromCart(item.id, item.size)}
+                    onClick={() => removeFromCart(item.id, item.attributes)}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <Trash2 className="w-5 h-5" />

@@ -133,7 +133,7 @@ export default function CheckoutPage() {
       order_items: cartItems.map(item => ({
         product_id: item.id,
         quantity: item.quantity,
-        size: item.size,
+        attributes: item.attributes || {},
         price: item.price
       })),
       order_notes: formData.orderNotes,
@@ -227,6 +227,46 @@ export default function CheckoutPage() {
     setSavedInfoExists(false)
     toast.success('Saved information cleared')
   }
+
+  // Helper function to generate a unique key for each cart item
+  const getItemKey = (item) => {
+    const attributesKey = item.attributes ? Object.entries(item.attributes)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([key, value]) => `${key}:${value}`)
+      .join('-') : '';
+    
+    return `${item.id}-${attributesKey}`;
+  };
+
+  // Function to render attributes in a readable format
+  const renderAttributes = (item) => {
+    if (!item.attributes || Object.keys(item.attributes).length === 0) {
+      return null;
+    }
+
+    if (item.attributeLabels) {
+      return (
+        <>
+          {Object.values(item.attributeLabels).map((attr, index) => (
+            <p key={index} className="text-sm text-gray-600">
+              {attr.name}: {attr.value}
+            </p>
+          ))}
+        </>
+      );
+    }
+
+    // Fallback if attributeLabels is not available
+    return (
+      <>
+        {Object.entries(item.attributes).map(([key, value], index) => (
+          <p key={index} className="text-sm text-gray-600">
+            Attribute: {value}
+          </p>
+        ))}
+      </>
+    );
+  };
 
   // If cart is empty, redirect or show message
   if (cartItems.length === 0) {
@@ -507,7 +547,7 @@ export default function CheckoutPage() {
           <div className="bg-gray-50 p-4 sm:p-6 rounded-lg h-fit sticky top-24 order-first lg:order-last mb-6 lg:mb-0">
             <div className="space-y-4">
               {cartItems.map((item) => (
-                <div key={`${item.id}-${item.size}`} className="flex gap-4 hover:bg-gray-100 p-2 rounded-lg transition-colors">
+                <div key={getItemKey(item)} className="flex gap-4 hover:bg-gray-100 p-2 rounded-lg transition-colors">
                   <div className="relative">
                     <img
                       src={item.image_url}
@@ -520,7 +560,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm">{item.title}</h3>
-                    {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
+                    {renderAttributes(item)}
                   </div>
                   <p className="font-medium">Rs {item.price.toLocaleString()}</p>
                 </div>

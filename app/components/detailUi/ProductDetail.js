@@ -23,7 +23,7 @@ export default function ProductDetail() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showMagnifier, setShowMagnifier] = useState(false)
   const imageRef = useRef(null)
-  const [selectedSize, setSelectedSize] = useState(null)
+  const [selectedAttributes, setSelectedAttributes] = useState({})
   const [showSizeGuide, setShowSizeGuide] = useState(false)
   const [measurementUnit, setMeasurementUnit] = useState('IN') // 'IN' or 'CM'
   const [showCartModal, setShowCartModal] = useState(false)
@@ -95,14 +95,22 @@ export default function ProductDetail() {
   ]
 
   const handleAddToCart = () => {
-    // if (!selectedSize) {
-    //   alert('Please select a size')
-    //   return
-    // }
+    // Check if there are attributes and if all have been selected
+    const hasAttributes = product.attributes && product.attributes.length > 0;
+    const sizeAttribute = product.attributes?.find(attr => 
+      attr.attribute_name?.toLowerCase() === 'size' || 
+      attr.en_attribute_name?.toLowerCase() === 'size'
+    );
+    
+    // If there's a size attribute but no selection made, show alert
+    if (sizeAttribute && !selectedAttributes[sizeAttribute.attribute_id]) {
+      alert('Please select a size');
+      return;
+    }
 
-    addToCart(product, quantity, selectedSize)
-    setShowCartModal(true)
-  }
+    addToCart(product, quantity, selectedAttributes);
+    setShowCartModal(true);
+  };
 
   const handleImageNavigation = (direction) => {
     setAutoSlide(false)
@@ -271,15 +279,20 @@ export default function ProductDetail() {
               {product.attributes?.map((attribute) => (
                 <div key={attribute.attribute_id} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{attribute.en_attribute_name || 'Color'}</p>
+                    <p className="font-medium">{attribute.attribute_name || 'Attribute'}</p>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {attribute.values.map((value) => (
                       <button
                         key={value}
-                        onClick={() => setSelectedSize(value)}
+                        onClick={() => {
+                          setSelectedAttributes(prev => ({
+                            ...prev,
+                            [attribute.attribute_id]: value
+                          }));
+                        }}
                         className={`min-w-[2.5rem] h-10 px-3 rounded-full border text-xs sm:text-sm ${
-                          selectedSize === value 
+                          selectedAttributes[attribute.attribute_id] === value 
                             ? 'bg-black text-white border-black' 
                             : 'border-gray-300 hover:border-gray-400'
                         } flex items-center justify-center overflow-hidden`}
@@ -498,7 +511,17 @@ export default function ProductDetail() {
           />
           <div>
             <h4 className="font-medium text-black">{product.title}</h4>
-            {selectedSize && <p className="text-sm text-black">Size: {selectedSize}</p>}
+            {Object.entries(selectedAttributes).length > 0 && (
+              <div className="text-sm text-black">
+                {product.attributes?.map(attr => 
+                  selectedAttributes[attr.attribute_id] ? (
+                    <p key={attr.attribute_id}>
+                      {attr.attribute_name}: {selectedAttributes[attr.attribute_id]}
+                    </p>
+                  ) : null
+                )}
+              </div>
+            )}
             <p className="text-sm text-black">Quantity: {quantity}</p>
             <p className="font-medium mt-2 text-black">Rs. {product.price.toLocaleString()}</p>
           </div>
