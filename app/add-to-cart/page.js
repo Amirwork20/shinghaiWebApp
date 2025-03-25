@@ -15,6 +15,8 @@ export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity } = useCart()
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const deliveryCharges = cartItems.reduce((sum, item) => sum + (item.delivery_charges * item.quantity), 0)
+  const total = subtotal + deliveryCharges
 
   // Helper function to generate a unique key for each cart item
   const getItemKey = (item) => {
@@ -79,7 +81,14 @@ export default function CartPage() {
                     <p className="text-sm text-muted-foreground">{item.sku}</p>
                     {renderAttributes(item)}
                   </div>
-                  <p className="font-medium">Rs. {item.price.toLocaleString()}</p>
+                  <div className="text-right">
+                    <p className="font-medium">Rs. {item.price.toLocaleString()}</p>
+                    {item.delivery_charges > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        +Rs. {item.delivery_charges} delivery charges
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
                   <div className="flex items-center border rounded-md">
@@ -106,7 +115,14 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between pt-2">
                   <p className="font-medium">Item Total</p>
-                  <p className="font-medium">Rs. {(item.price * item.quantity).toLocaleString()}</p>
+                  <p className="font-medium">
+                    Rs. {(item.price * item.quantity).toLocaleString()}
+                    {item.delivery_charges > 0 && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        (includes Rs. {(item.delivery_charges * item.quantity).toLocaleString()} delivery)
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
@@ -125,6 +141,18 @@ export default function CartPage() {
             <div className="flex justify-between items-center">
               <p className="text-lg font-medium">Subtotal</p>
               <p className="text-lg font-medium">Rs. {subtotal.toLocaleString()}</p>
+            </div>
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-medium">Delivery Charges</p>
+              <p className="text-sm font-medium">
+                {deliveryCharges > 0 
+                  ? `Rs. ${deliveryCharges.toLocaleString()}`
+                  : 'Free'}
+              </p>
+            </div>
+            <div className="flex justify-between items-center border-t pt-2">
+              <p className="text-lg font-bold">Total</p>
+              <p className="text-lg font-bold">Rs. {total.toLocaleString()}</p>
             </div>
             <p className="text-sm text-muted-foreground">
               Taxes and shipping calculated at checkout

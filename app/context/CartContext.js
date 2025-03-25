@@ -58,6 +58,7 @@ export function CartProvider({ children }) {
           id: product._id,
           title: product.title,
           price: product.price,
+          delivery_charges: product.delivery_charges || 0,
           image_url: product.image_url,
           attributes: selectedAttributes,
           quantity: quantity,

@@ -262,6 +262,18 @@ export default function ProductDetail() {
               )}
             </p>
 
+            {/* Delivery Charges */}
+            <div className="text-sm text-gray-600">
+              <p className="flex items-center gap-1">
+                <span>Delivery charges:</span> 
+                <span className="font-medium">
+                  {product.delivery_charges > 0 
+                    ? `Rs. ${product.delivery_charges}`
+                    : 'Free delivery'}
+                </span>
+              </p>
+            </div>
+
             {/* Size Selection */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -524,27 +536,32 @@ export default function ProductDetail() {
             )}
             <p className="text-sm text-black">Quantity: {quantity}</p>
             <p className="font-medium mt-2 text-black">Rs. {product.price.toLocaleString()}</p>
+            {product.delivery_charges > 0 && (
+              <p className="text-xs text-gray-600">
+                +Rs. {product.delivery_charges} delivery charges
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <Link href="/collections">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Link href="/collections" className="w-full">
             <Button 
               variant="outline" 
-              className="flex-1 border-black text-black hover:bg-gray-100"
+              className="w-full border-black text-black hover:bg-gray-100"
             >
               CONTINUE SHOPPING
             </Button>
           </Link>
-          <Link href="/add-to-cart">
-            <Button className="flex-1 bg-transparent text-black hover:bg-gray-100 border border-black">
+          <Link href="/add-to-cart" className="w-full">
+            <Button className="w-full bg-transparent text-black hover:bg-gray-100 border border-black">
               VIEW CART ({cartItems.length})
             </Button>
           </Link>
         </div>
-        <Link href="/payment">
+        <Link href="/payment" className="w-full block mt-4">
           <Button 
-            className="w-full mt-4 bg-transparent text-black hover:bg-gray-100 border border-black"
+            className="w-full bg-transparent text-black hover:bg-gray-100 border border-black"
           >
             CHECKOUT
           </Button>

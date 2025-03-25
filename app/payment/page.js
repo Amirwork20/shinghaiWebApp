@@ -84,6 +84,8 @@ export default function CheckoutPage() {
   }, [savedInfoExists, formData.deliveryCity])
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const deliveryCharges = cartItems.reduce((sum, item) => sum + (item.delivery_charges * item.quantity), 0)
+  const total = subtotal + deliveryCharges
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -130,14 +132,52 @@ export default function CheckoutPage() {
         postal_code: formData.postalCode,
         delivery_city: formData.deliveryCity
       },
-      order_items: cartItems.map(item => ({
-        product_id: item.id,
-        quantity: item.quantity,
-        attributes: item.attributes || {},
-        price: item.price
-      })),
+      order_items: cartItems.map(item => {
+        // Try to find a size attribute in the attributes
+        let size = null;
+        if (item.attributes) {
+          // Check if we have attribute labels with size
+          if (item.attributeLabels) {
+            for (const attrId in item.attributeLabels) {
+              if (item.attributeLabels[attrId].name.toLowerCase() === 'size') {
+                size = item.attributeLabels[attrId].value;
+                break;
+              }
+            }
+          }
+          
+          // If size not found in labels, try to guess from attribute values
+          if (!size) {
+            for (const [attrId, value] of Object.entries(item.attributes)) {
+              if (typeof value === 'string' && 
+                  (value.toLowerCase().includes('xl') || 
+                   value.toLowerCase().includes('xxl') || 
+                   value.toLowerCase().includes('lg') || 
+                   value.toLowerCase().includes('sm') || 
+                   value.toLowerCase().includes('md') || 
+                   value.toLowerCase().includes('s') || 
+                   value.toLowerCase().includes('m') || 
+                   value.toLowerCase().includes('l'))) {
+                size = value;
+                break;
+              }
+            }
+          }
+        }
+        
+        return {
+          product_id: item.id,
+          quantity: item.quantity,
+          attributes: item.attributes || {},
+          price: item.price,
+          delivery_charges: item.delivery_charges || 0,
+          size: size || 'Standard' // Use default if no size found
+        };
+      }),
       order_notes: formData.orderNotes,
       subtotal: subtotal,
+      delivery_charges: deliveryCharges,
+      total: total,
       payment_method: 'COD'  // Cash on Delivery
     }
 
@@ -583,13 +623,13 @@ export default function CheckoutPage() {
                     Shipping
                     <Info className="w-4 h-4 text-gray-400" />
                   </span>
-                  <span>—</span>
+                  <span>{deliveryCharges > 0 ? `Rs ${deliveryCharges.toLocaleString()}` : 'Free'}</span>
                 </div>
                 <div className="flex justify-between text-lg font-medium pt-2">
                   <span>Total</span>
                   <div className="text-right">
                     <span className="text-sm text-gray-600">PKR</span>
-                    <span> Rs {subtotal.toLocaleString()}</span>
+                    <span> Rs {total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
