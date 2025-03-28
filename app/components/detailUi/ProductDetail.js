@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../componen
 import { useParams } from "next/navigation"
 import { useCart } from '../../context/CartContext'
 import Link from 'next/link'
+import SizeGuideModal from './SizeGuideModal'
 
 export default function ProductDetail() {
   const params = useParams()
@@ -25,7 +26,6 @@ export default function ProductDetail() {
   const imageRef = useRef(null)
   const [selectedAttributes, setSelectedAttributes] = useState({})
   const [showSizeGuide, setShowSizeGuide] = useState(false)
-  const [measurementUnit, setMeasurementUnit] = useState('IN') // 'IN' or 'CM'
   const [showCartModal, setShowCartModal] = useState(false)
   const [autoSlide, setAutoSlide] = useState(true)
   const { addToCart, cartItems } = useCart()
@@ -261,7 +261,8 @@ export default function ProductDetail() {
                 </span>
               )}
             </p>
-
+            
+       
             {/* Delivery Charges */}
             <div className="text-sm text-gray-600">
               <p className="flex items-center gap-1">
@@ -276,17 +277,20 @@ export default function ProductDetail() {
 
             {/* Size Selection */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowSizeGuide(true)} 
-                  className="text-sm text-blue-600 underline flex items-center"
-                >
-                  Size Guide
-                  <svg className="w-4 h-4 ml-1 -rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 4L3 21" />
-                    <path d="M15 4H20V9" />
-                  </svg>
-                </button>
+              <div className="flex items-center gap-2 mb-4">
+                {product.size_guide_id && (
+                  <button 
+                    onClick={() => setShowSizeGuide(true)} 
+                    className="w-full text-sm font-medium bg-indigo-100 text-indigo-800 px-4 py-2.5 rounded-md flex items-center justify-center hover:bg-indigo-200 transition-colors"
+                  >
+                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <line x1="3" y1="9" x2="21" y2="9" />
+                      <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                    View Size Guide
+                  </button>
+                )}
               </div>
               {product.attributes?.map((attribute) => (
                 <div key={attribute.attribute_id} className="space-y-2">
@@ -435,76 +439,11 @@ export default function ProductDetail() {
     </div>
 
     {/* Size Guide Modal */}
-    <Dialog open={showSizeGuide} onOpenChange={setShowSizeGuide}>
-      <DialogContent className="max-w-4xl mx-auto p-6 bg-white">
-        <DialogHeader className="mb-6">
-          <DialogTitle className="text-2xl font-bold text-center text-gray-900">Size Guide - A0357ST</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Measurement Toggle */}
-          <div className="flex justify-center sm:justify-end border-b border-gray-200">
-            <div className="inline-flex rounded-lg p-1 bg-indigo-50">
-              <button 
-                className={`px-6 py-2 rounded-md transition-all duration-200 ${
-                  measurementUnit === 'CM' 
-                    ? 'bg-indigo-600 shadow-sm text-white' 
-                    : 'text-indigo-600 hover:text-indigo-800'
-                }`}
-                onClick={() => setMeasurementUnit('CM')}
-              >
-                CM
-              </button>
-              <button 
-                className={`px-6 py-2 rounded-md transition-all duration-200 ${
-                  measurementUnit === 'IN'
-                    ? 'bg-indigo-600 shadow-sm text-white'
-                    : 'text-indigo-600 hover:text-indigo-800'
-                }`}
-                onClick={() => setMeasurementUnit('IN')}
-              >
-                INCHES
-              </button>
-            </div>
-          </div>
-
-          {/* Size Table */}
-          <div className="overflow-x-auto rounded-lg border border-indigo-100 shadow-sm">
-            <table className="w-full min-w-full divide-y divide-indigo-200">
-              <thead className="bg-indigo-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">Measurements</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">XS</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">S</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">M</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">L</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-indigo-100">
-                {[
-                  { label: 'Shirt Length (Front)', xs: '40', s: '40', m: '40', l: '40' },
-                  { label: 'Shirt Length (Back)', xs: '40', s: '40', m: '40', l: '40' },
-                  { label: 'Shoulder', xs: '14', s: '14.5', m: '15', l: '16' },
-                  { label: 'Chest', xs: '18', s: '19.5', m: '21.5', l: '23.5' },
-                  { label: 'Arm Hole', xs: '9', s: '9.75', m: '10.5', l: '11.25' },
-                  { label: 'Bottom', xs: '26', s: '27', m: '29', l: '31' },
-                  { label: 'Sleeves Length', xs: '22.5', s: '22.5', m: '22.5', l: '22.5' },
-                  { label: 'Sleeves Opening', xs: '4', s: '4', m: '4.5', l: '5' },
-                ].map((row, index) => (
-                  <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.label}</td>
-                    <td className="px-4 py-3 text-sm text-indigo-600">{measurementUnit === 'CM' ? row.xs : (Number(row.xs) * 0.393701).toFixed(1)}</td>
-                    <td className="px-4 py-3 text-sm text-indigo-600">{measurementUnit === 'CM' ? row.s : (Number(row.s) * 0.393701).toFixed(1)}</td>
-                    <td className="px-4 py-3 text-sm text-indigo-600">{measurementUnit === 'CM' ? row.m : (Number(row.m) * 0.393701).toFixed(1)}</td>
-                    <td className="px-4 py-3 text-sm text-indigo-600">{measurementUnit === 'CM' ? row.l : (Number(row.l) * 0.393701).toFixed(1)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <SizeGuideModal 
+      isOpen={showSizeGuide} 
+      onClose={() => setShowSizeGuide(false)} 
+      sizeGuide={product.size_guide_id}
+    />
 
     {/* Cart Modal */}
     <Dialog open={showCartModal} onOpenChange={setShowCartModal}>

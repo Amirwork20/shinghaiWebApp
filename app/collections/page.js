@@ -380,8 +380,8 @@ export default function CollectionsPage() {
                       <Slider
                         value={priceRange}
                         onValueChange={handlePriceChange}
-                        max={20000}
-                        step={500}
+                        max={100000}
+                        step={1000}
                         className="mt-4"
                       />
                       <div className="flex justify-between mt-2 text-sm">
@@ -473,8 +473,8 @@ export default function CollectionsPage() {
                   <Slider
                     value={priceRange}
                     onValueChange={handlePriceChange}
-                    max={20000}
-                    step={500}
+                    max={100000}
+                    step={1000}
                     className="mt-4"
                   />
                   <div className="flex justify-between mt-2 text-sm">

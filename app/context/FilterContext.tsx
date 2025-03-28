@@ -18,7 +18,7 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined)
 export function FilterProvider({ children }: { children: React.ReactNode }) {
   const [sortBy, setSortBy] = useState('')
   const [season, setSeason] = useState<string | null>(null)
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 20000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000])
   const [fabric, setFabric] = useState<string | null>(null)
 
   // Modified setter functions to handle 'all' value
@@ -33,7 +33,7 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   const resetFilters = () => {
     setSortBy('')
     setSeason(null)
-    setPriceRange([0, 20000])
+    setPriceRange([0, 100000])
     setFabric(null)
   }
 
