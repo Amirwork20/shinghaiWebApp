@@ -30,6 +30,8 @@ export function NavMenu() {
   const [categories, setCategories] = useState<MainCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isHoveringDropdown, setIsHoveringDropdown] = useState(false)
+  const [mobileActiveMainCategory, setMobileActiveMainCategory] = useState<string | null>(null)
+  const [mobileActiveSubCategory, setMobileActiveSubCategory] = useState<string | null>(null)
   const { handleCategoryChange, handleClearCategories } = useCategory()
   const { resetFilters } = useFilter()
   const pathname = usePathname()
@@ -129,6 +131,23 @@ export function NavMenu() {
       setDefaultImage(null)
       setActiveImage(null)
     }, 100)
+  }
+
+  // Handlers for mobile menu sections
+  const handleMobileMainCategoryToggle = (categoryId: string) => {
+    if (mobileActiveMainCategory === categoryId) {
+      setMobileActiveMainCategory(null)
+      setMobileActiveSubCategory(null) // Close subcategory when main closes
+    } else {
+      setMobileActiveMainCategory(categoryId)
+      setMobileActiveSubCategory(null) // Reset subcategory when changing main
+    }
+  }
+
+  const handleMobileSubCategoryToggle = (subCategoryId: string) => {
+    setMobileActiveSubCategory(prevState => 
+      prevState === subCategoryId ? null : subCategoryId
+    )
   }
 
   const handleAllClick = (e: React.MouseEvent) => {
@@ -316,24 +335,114 @@ export function NavMenu() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white shadow-lg"
+            className="lg:hidden bg-white shadow-lg border-t border-gray-200"
           >
-            {categories.map((category) => (
-              <Link
-                key={category._id}
-                href="/collections"
-                onClick={(e) => handleCategoryClick(e, category)}
-                className="block px-4 py-2 text-black font-medium hover:bg-gray-100"
-              >
-                {category.category_name}
-              </Link>
-            ))}
-            <Link
-              href="/checkout"
-              className="block px-4 py-2 text-black font-medium hover:bg-gray-100 border-t border-gray-200"
-            >
-              CHECKOUT
-            </Link>
+            <div className="py-2">
+              {categories.map((category) => (
+                <div key={category._id} className="border-b border-gray-100 last:border-b-0">
+                  <button
+                    onClick={() => handleMobileMainCategoryToggle(category._id)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-black font-medium hover:bg-gray-50 text-left"
+                  >
+                    <span>{category.category_name}</span>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-4 w-4 transition-transform duration-200 ${mobileActiveMainCategory === category._id ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <AnimatePresence>
+                    {mobileActiveMainCategory === category._id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden bg-gray-50"
+                      >
+                        {/* Link for the main category itself */}  
+                        <Link
+                          href="/collections"
+                          onClick={(e) => {
+                              handleCategoryClick(e, category);
+                              setActiveMenu(null); // Close mobile menu on click
+                          }}
+                          className="block pl-8 pr-4 py-2 text-black hover:bg-gray-100"
+                        >
+                           View All {category.category_name}
+                        </Link>
+                        {category.sub_categories?.map((subCategory) => (
+                          <div key={subCategory._id} className="border-t border-gray-200">
+                            <button
+                              onClick={() => handleMobileSubCategoryToggle(subCategory._id)}
+                              className="w-full pl-8 pr-4 py-3 flex items-center justify-between text-black font-medium hover:bg-gray-100 text-left"
+                            >
+                              <span>{subCategory.category_name}</span>
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className={`h-4 w-4 transition-transform duration-200 ${mobileActiveSubCategory === subCategory._id ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                            <AnimatePresence>
+                              {mobileActiveSubCategory === subCategory._id && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden bg-gray-100"
+                                >
+                                  {/* Link for the sub category itself */}  
+                                  <Link
+                                    href="/collections"
+                                    onClick={(e) => {
+                                      handleCategoryClick(e, category, subCategory);
+                                      setActiveMenu(null); // Close mobile menu on click
+                                    }}
+                                    className="block pl-12 pr-4 py-2 text-black hover:bg-gray-200"
+                                  >
+                                    View All {subCategory.category_name}
+                                  </Link>
+                                  {subCategory.categories?.map((cat) => (
+                                    <Link
+                                      key={cat._id}
+                                      href="/collections"
+                                      onClick={(e) => {
+                                        handleCategoryClick(e, category, subCategory, cat);
+                                        setActiveMenu(null); // Close mobile menu on click
+                                      }}
+                                      className="block pl-12 pr-4 py-2 text-gray-700 hover:bg-gray-200 hover:text-black"
+                                    >
+                                      {cat.category_name}
+                                    </Link>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+              <div className="border-t border-gray-200">
+                <Link
+                  href="/checkout"
+                  className="block px-4 py-3 text-black font-medium hover:bg-gray-100"
+                  onClick={() => setActiveMenu(null)} // Close mobile menu
+                >
+                  CHECKOUT
+                </Link>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
