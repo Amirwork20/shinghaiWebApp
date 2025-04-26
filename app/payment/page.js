@@ -584,7 +584,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="bg-gray-50 p-4 sm:p-6 rounded-lg h-fit sticky top-24 order-first lg:order-last mb-6 lg:mb-0">
+          <div className="bg-gray-50 p-4 sm:p-6 rounded-lg h-fit lg:sticky lg:top-24 order-first lg:order-last mb-6 lg:mb-0">
             <div className="space-y-4">
               {cartItems.map((item) => (
                 <div key={getItemKey(item)} className="flex gap-4 hover:bg-gray-100 p-2 rounded-lg transition-colors">
