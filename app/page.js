@@ -22,8 +22,27 @@ export default function Home() {
     playing: true,
     muted: true
   });
+  const [isMobile, setIsMobile] = useState(true);
   const videoRefs = useRef({});
   const mediaObserver = useRef(null);
+
+  // Detect if it's mobile or desktop view
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkDevice();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkDevice);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -110,7 +129,7 @@ export default function Home() {
     });
     
     // Play the active video if it's a video slide
-    const currentItem = media[index];
+    const currentItem = getDeviceMedia()[index];
     if (currentItem && currentItem.type === 'video') {
       const video = videoRefs.current[index];
       if (video && videoControls.playing) {
@@ -123,6 +142,21 @@ export default function Home() {
       ...prev,
       [index]: true
     }));
+  };
+
+  // Filter media for the current device
+  const getDeviceMedia = () => {
+    if (!media || media.length === 0) return [];
+    
+    // Filter based on device type
+    return media.filter(item => {
+      // Include if media is for this device or both
+      if (isMobile) {
+        return item.viewType === 'mobile' || item.viewType === 'both' || !item.viewType;
+      } else {
+        return item.viewType === 'desktop' || item.viewType === 'both' || !item.viewType;
+      }
+    });
   };
 
   // Set up observer for media elements
@@ -141,7 +175,7 @@ export default function Home() {
         observer.unobserve(element);
       });
     };
-  }, [media]);
+  }, [media, isMobile]);
 
   const handleWhatsAppClick = () => {
     // Replace with your WhatsApp number
@@ -315,6 +349,9 @@ export default function Home() {
       </SwiperSlide>
     );
   };
+  
+  // Get the filtered media based on current device
+  const deviceMedia = getDeviceMedia();
 
   return (
     <>
@@ -362,7 +399,7 @@ export default function Home() {
           }}
           watchSlidesProgress={true}
         >
-          {media.map((item, index) => renderMediaSlide(item, index))}
+          {deviceMedia.map((item, index) => renderMediaSlide(item, index))}
           <SwiperSlide>
             <Footer/>
           </SwiperSlide>
@@ -390,7 +427,7 @@ export default function Home() {
           }}
           watchSlidesProgress={true}
         >
-          {media.map((item, index) => renderMediaSlide(item, index))}
+          {deviceMedia.map((item, index) => renderMediaSlide(item, index))}
           <SwiperSlide>
             <Footer/>
           </SwiperSlide>
