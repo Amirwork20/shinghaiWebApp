@@ -45,9 +45,21 @@ export function CartProvider({ children }) {
       );
 
       if (existingItem) {
+        // Check if the new total quantity would exceed available stock
+        const newQuantity = existingItem.quantity + quantity;
+        const maxAllowed = Math.min(
+          product.quantity,
+          product.max_quantity_per_user || product.quantity
+        );
+        
+        if (newQuantity > maxAllowed) {
+          alert(`Sorry, you can only have a maximum of ${maxAllowed} of this item in your cart.`);
+          return prevItems;
+        }
+        
         return prevItems.map((item) =>
           item.id === product._id && attributesMatch(item.attributes, selectedAttributes)
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         );
       }
@@ -63,6 +75,9 @@ export function CartProvider({ children }) {
           attributes: selectedAttributes,
           quantity: quantity,
           sku: product.sku,
+          // Store available stock information
+          available_quantity: product.quantity,
+          max_quantity_per_user: product.max_quantity_per_user,
           attributeLabels: product.attributes?.reduce((acc, attr) => {
             if (selectedAttributes[attr.attribute_id]) {
               acc[attr.attribute_id] = {
@@ -114,6 +129,24 @@ export function CartProvider({ children }) {
         
         return itemKeys.every(key => itemAttrs[key] === targetAttrs[key]);
       };
+
+      // Find the item to check its available quantity
+      const itemToUpdate = prevItems.find(
+        item => item.id === id && attributesMatch(item.attributes, attributes)
+      );
+      
+      if (itemToUpdate) {
+        // Get the max allowed quantity (either from stored values or default to current quantity)
+        const availableQuantity = itemToUpdate.available_quantity || itemToUpdate.quantity;
+        const maxPerUser = itemToUpdate.max_quantity_per_user || availableQuantity;
+        const maxAllowed = Math.min(availableQuantity, maxPerUser);
+        
+        // If trying to exceed the limit, show alert and don't update
+        if (newQuantity > maxAllowed) {
+          alert(`Sorry, you cannot add more than ${maxAllowed} of this item to your cart.`);
+          return prevItems;
+        }
+      }
 
       return prevItems.map((item) =>
         item.id === id && attributesMatch(item.attributes, attributes)

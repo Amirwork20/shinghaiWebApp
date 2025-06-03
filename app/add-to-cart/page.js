@@ -58,6 +58,15 @@ export default function CartPage() {
     );
   };
 
+  // Helper function to determine if quantity can be increased
+  const canIncreaseQuantity = (item) => {
+    const availableQuantity = item.available_quantity || item.quantity;
+    const maxPerUser = item.max_quantity_per_user || availableQuantity;
+    const maxAllowed = Math.min(availableQuantity, maxPerUser);
+    
+    return item.quantity < maxAllowed;
+  };
+
   return (
     <div>
     <TopBanner/>
@@ -101,7 +110,8 @@ export default function CartPage() {
                     <span className="px-4 py-1">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.attributes, item.quantity + 1)}
-                      className="px-3 py-1 border-l hover:bg-muted"
+                      className={`px-3 py-1 border-l ${canIncreaseQuantity(item) ? 'hover:bg-muted' : 'opacity-50 cursor-not-allowed'}`}
+                      disabled={!canIncreaseQuantity(item)}
                     >
                       +
                     </button>
@@ -124,6 +134,12 @@ export default function CartPage() {
                     )}
                   </p>
                 </div>
+                {/* Show inventory limit if low */}
+                {item.available_quantity && item.available_quantity <= 5 && (
+                  <p className="text-xs text-orange-600">
+                    Only {item.available_quantity} item(s) in stock
+                  </p>
+                )}
               </div>
             </div>
           ))}

@@ -55,6 +55,13 @@ export default function ProductDetail() {
     fetchProduct()
   }, [fetchProduct])
 
+  // Reset quantity to 1 when product changes
+  useEffect(() => {
+    if (product && product.quantity > 0) {
+      setQuantity(1)
+    }
+  }, [product])
+
   // Add auto-sliding functionality - but only when not interacting with images
   useEffect(() => {
     if (!product || !autoSlide || showMagnifier) return
@@ -97,6 +104,11 @@ export default function ProductDetail() {
   ]
 
   const handleAddToCart = () => {
+    // Check if product is in stock
+    if (product.quantity <= 0) {
+      return;
+    }
+    
     // Check if there are attributes and if all have been selected
     const hasAttributes = product.attributes && product.attributes.length > 0;
     const sizeAttribute = product.attributes?.find(attr => 
@@ -107,6 +119,24 @@ export default function ProductDetail() {
     // If there's a size attribute but no selection made, show alert
     if (sizeAttribute && !selectedAttributes[sizeAttribute.attribute_id]) {
       alert('Please select a size');
+      return;
+    }
+
+    // Get current quantity of this product in cart (with same attributes)
+    const currentInCart = cartItems.find(item => 
+      item.id === product._id && 
+      JSON.stringify(item.attributes) === JSON.stringify(selectedAttributes)
+    )?.quantity || 0;
+    
+    // Check if adding this quantity would exceed the available quantity
+    if (currentInCart + quantity > product.quantity) {
+      alert(`Sorry, only ${product.quantity} item(s) available for this product.`);
+      return;
+    }
+    
+    // Check if adding this quantity would exceed max quantity per user
+    if (currentInCart + quantity > (product.max_quantity_per_user || product.quantity)) {
+      alert(`Sorry, you can only purchase up to ${product.max_quantity_per_user || product.quantity} of this item.`);
       return;
     }
 
@@ -293,6 +323,16 @@ export default function ProductDetail() {
               )}
             </p>
             
+            {/* Availability Status */}
+            <div className="text-sm">
+              {product.quantity <= 0 ? (
+                <p className="text-red-600 font-semibold">Sold Out</p>
+              ) : product.quantity <= 5 ? (
+                <p className="text-orange-600">Only {product.quantity} left in stock</p>
+              ) : (
+                <p className="text-green-600">In Stock</p>
+              )}
+            </div>
        
             {/* Delivery Charges */}
             <div className="text-sm text-gray-600">
@@ -360,7 +400,7 @@ export default function ProductDetail() {
                   variant="outline"
                   size="icon"
                   onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || product.quantity <= 0}
                 >
                   -
                 </Button>
@@ -368,8 +408,20 @@ export default function ProductDetail() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantity(prev => Math.min(product.max_quantity_per_user || 10, prev + 1))}
-                  disabled={quantity >= (product.max_quantity_per_user || 10)}
+                  onClick={() => {
+                    const maxAllowed = Math.min(
+                      product.quantity,
+                      product.max_quantity_per_user || product.quantity
+                    );
+                    setQuantity(prev => Math.min(maxAllowed, prev + 1));
+                  }}
+                  disabled={
+                    quantity >= Math.min(
+                      product.quantity,
+                      product.max_quantity_per_user || product.quantity
+                    ) || 
+                    product.quantity <= 0
+                  }
                 >
                   +
                 </Button>
@@ -378,10 +430,15 @@ export default function ProductDetail() {
 
             {/* Add to Cart Button */}
             <Button 
-              className="w-full bg-zinc-900 text-white hover:bg-zinc-700"
+              className={`w-full ${
+                product.quantity <= 0
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed hover:bg-gray-300"
+                  : "bg-zinc-900 text-white hover:bg-zinc-700"
+              }`}
               onClick={handleAddToCart}
+              disabled={product.quantity <= 0}
             >
-              ADD TO CART
+              {product.quantity <= 0 ? "SOLD OUT" : "ADD TO CART"}
             </Button>
 
             {/* Care Instructions & Disclaimer - Desktop Only */}
